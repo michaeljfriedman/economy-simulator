@@ -44,6 +44,7 @@ Company:
 - Employees (list of persons)
 - Expenses (list of (company, amount) pairs): amount of money to pay each
   company each year
+- In-business status (bool)
 
 Simulator:
 
@@ -52,7 +53,7 @@ Simulator:
   - Distribution of % workers in each industry
   - Industries. For each, distributions of: income, expenses
   - Income brackets. For each, distribution of expenses
-- Read in config: # people, # companies, how long to run, etc
+- Read in config: # people, # companies, how long to run, the data files to use, etc
 - Initialize:
   - Create # companies. For each:
     - Pick an industry from the distribution: # companies in each industry.
@@ -74,10 +75,12 @@ Simulator:
     - Each person pays 1/360 of their expenses. For each expense, pick a company
       uniformly at random in that industry to pay. If they can't afford to pay,
       they die.
-    - Each company pays 1/360 of their expenses
+    - Each company: Pays 1/360 of their expenses. If they can't afford to pay,
+      they lay off all employees and go out of business.
   - Every 30 days:
-    - Each company: (1) Lays off employees[^layoffs] until they have enough
-      money to pay all of them. (2) Pays their employees 1/12 of their income
+    - Each company: Pays their employees 1/12 of their income. If they can't
+      afford to pay, they lay off employees[^layoffs] until they have enough.
+      If they run out of employees, they go out of business.
 
 [^layoffs]: Each employee to lay off is chosen by selecting an income from the
 income distribution of that industry, and then selecting the employee with the
