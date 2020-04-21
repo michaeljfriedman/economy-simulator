@@ -71,5 +71,8 @@ Vagrant.configure("2") do |config|
 
     # Set up git
     git config --global auto.crlf false
+
+    # Install deps
+    pip install argparse numpy
   SHELL
 end
