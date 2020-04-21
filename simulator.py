@@ -54,10 +54,23 @@ def run(
   for i in range(ndays):
     # TODO: people pay expenses
 
-    # TODO: companies pay expenses
+    # Companies pay expenses
+    for c in companies:
+      if not c.in_business:
+        continue
+
+      for other_c, amount in c.expenses:
+        pay = amount / 360
+        if pay > c.money:
+          # Go out of business
+          for e in c.employees:
+            e.income = 0
+          c.employees = []
+          c.in_business = False
+          break
+        other_c.money += amount / 360
 
     # TODO: Pay employees their income at the end of each month
-    pass
 
   # TODO: Compute results
   return True, {'err': ''}
