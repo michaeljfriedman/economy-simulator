@@ -70,7 +70,23 @@ def run(
           break
         other_c.money += amount / 360
 
-    # TODO: Pay employees their income at the end of each month
+    # Pay employees their income at the end of each month
+    if i % 30 == 29:
+      for c in companies:
+        if not c.in_business:
+          continue
+
+        # Pay employees
+        while True:
+          total_pay = np.sum([e.income / 12 for e in c.employees])
+          if total_pay <= c.money:
+            break
+          # TODO: lay off employee
+          if len(c.employees) == 0:
+            c.in_business = False
+            break
+        for e in c.employees:
+          e.money += e.income / 12
 
   # TODO: Compute results
   return True, {'err': ''}
