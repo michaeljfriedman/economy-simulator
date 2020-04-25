@@ -28,7 +28,6 @@ class Company:
 def init(npersons, ncompanies, income, saving_rate):
   people = [
     Person(
-      money=income / months_per_year, # one month's income
       income=income,
       saving_rate=saving_rate
     ) for i in range(npersons)
@@ -40,6 +39,7 @@ def init(npersons, ncompanies, income, saving_rate):
     companies[i].employees = people[i*people_per_company:(i+1)*people_per_company]
     if i < extra:
       companies[i].employees.append(people[len(people)-1-i]) # add one extra
+    companies[i].money = np.sum([e.income for e in companies[i].employees]) # 1 year's worth of payroll
   return people, companies
 
 # Calculates statistics based on the current state of the model. Returns 3
@@ -104,18 +104,8 @@ def run(
   company_wealth = [cw]
   unemployment = [u]
   for i in range(ndays):
-    # Each person spends at a random company
-    for p in people:
-      if not p.employed:
-        continue
-
-      c = np.random.choice([c for c in companies if c.in_business])
-      amount = ((1 - p.saving_rate) * p.income) / (days_per_month * months_per_year)
-      p.money -= amount
-      c.money += amount
-
-    # At the end of each month, companies pay their employees
-    if i % days_per_month == (days_per_month - 1):
+    # At the beginning of each month, companies pay their employees
+    if i % days_per_month == 0:
       for c in companies:
         if not c.in_business:
           continue
@@ -135,6 +125,16 @@ def run(
           amount = e.income / months_per_year
           c.money -= amount
           e.money += amount
+
+    # Each person spends at a random company
+    for p in people:
+      if not p.employed:
+        continue
+
+      c = np.random.choice([c for c in companies if c.in_business])
+      amount = ((1 - p.saving_rate) * p.income) / (days_per_month * months_per_year)
+      p.money -= amount
+      c.money += amount
 
     # Calculate stats
     pw, cw, u = calculate_stats(people, companies)

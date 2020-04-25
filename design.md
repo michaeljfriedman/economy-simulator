@@ -38,7 +38,7 @@ Some examples:
 Key points:
 
 - Everyone makes the same amount of money, and spends at the same rate
-- Variable: *where* they spend their money is determined probabilistically
+- Variable: *which companies* people spend their money to
 
 Fixed parameters:
 
@@ -52,12 +52,37 @@ Simulation:
 - Initialization:
   - Each person is assigned to a company (people are divided among companies
     evenly)
-  - Each person gets 1 month's income
-- Each day:
-  - Each person picks a random company and spends 1/30 of their spending money
-    to that company
-- Every 30 days:
+  - Each company gets money to cover 1 year's worth of payroll
+- At the beginning of each month (30 days):
   - Each company pays each of their employees 1 month's income. If they don't
     have enough money to cover it, they pick a random person to lay off until
     they do. If they run out of employees, they go out of business (removed from
     the economy).
+- Each day:
+  - Each person picks a random company and spends 1/30 of their monthly
+    spending to that company
+
+## Config format
+
+The config is a JSON object with the parameters:
+
+- `npersons` (int): the number of people in the model
+- `ncompanies` (int): the number of companies in the model
+- `ndays` (int): how many days to run the simulation for (note there are 30 days
+  in each month in this model)
+- `income` (int): annual income of each person in the model. An employed person
+  receives an equal amount of this each month (there are 12 months in each year
+  in this model)
+- `saving_rate` (float): the fraction of income each person will save each month
+
+Example:
+
+```json
+{
+  "npersons": 10000,
+  "ncompanies": 100,
+  "ndays": 360,
+  "income": 65000,
+  "saving_rate": 0.25
+}
+```
