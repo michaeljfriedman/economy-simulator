@@ -4,6 +4,9 @@ The simulator.
 
 import numpy as np
 
+months_per_year = 12
+days_per_month = 30
+
 # A person in the model
 class Person:
 
@@ -25,7 +28,7 @@ class Company:
 def init(npersons, ncompanies, income, saving_rate):
   people = [
     Person(
-      money=income/12,
+      money=income / months_per_year, # one month's income
       income=income,
       saving_rate=saving_rate
     ) for i in range(npersons)
@@ -61,3 +64,37 @@ def run(
 
   # Set up simulation
   people, companies = init(npersons, ncompanies, income, saving_rate)
+
+  # Run simluation
+  for i in range(ndays):
+    # Each person spends at a random company
+    for p in people:
+      if not p.employed:
+        continue
+
+      c = np.random.choice([c for c in companies if c.in_business])
+      amount = ((1 - p.saving_rate) * p.income) / (days_per_month * months_per_year)
+      p.money -= amount
+      c.money += amount
+
+    # At the end of each month, companies pay their employees
+    if i % days_per_month == (days_per_month - 1):
+      for c in companies:
+        if not c.in_business:
+          continue
+
+        # Company lays off employees until it can afford payroll
+        while True:
+          total_amount = np.sum([e.income / months_per_year for e in c.employees])
+          if total_amount <= c.money:
+            break
+          layoff = np.random.choice(c.employees)
+          c.employees.remove(layoff)
+          if len(c.employees) == 0:
+            c.in_business = False
+            break
+
+        for e in c.employees:
+          amount = e.income / months_per_year
+          c.money -= amount
+          e.money += amount
