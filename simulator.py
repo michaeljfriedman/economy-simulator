@@ -21,6 +21,24 @@ class Company:
     self.employees = employees
     self.in_business = in_business
 
+# Initializes the simulator. Returns the list of people and companies
+def init(npersons, ncompanies, income, saving_rate):
+  people = [
+    Person(
+      money=income/12,
+      income=income,
+      saving_rate=saving_rate
+    ) for i in range(npersons)
+  ]
+  companies = [Company() for i in range(ncompanies)]
+  people_per_company = int(npersons / ncompanies)
+  extra = npersons % ncompanies
+  for i in range(ncompanies): # assign people to companies
+    companies[i].employees = people[i*people_per_company:(i+1)*people_per_company]
+    if i < extra:
+      companies[i].employees.append(people[len(people)-1-i]) # add one extra
+  return people, companies
+
 # Runs the simulator, given parameters:
 # - npersons (int): the number of people in the model
 # - ncompanies (int): the number of companies in the model
@@ -42,17 +60,4 @@ def run(
   ):
 
   # Set up simulation
-  people = [
-    Person(
-      money=income/12,
-      income=income,
-      saving_rate=saving_rate
-    ) for i in range(npersons)
-  ]
-  companies = [Company() for i in range(ncompanies)]
-  people_per_company = int(npersons / ncompanies)
-  extra = npersons % ncompanies
-  for i in range(ncompanies): # assign people to companies
-    companies[i].employees = people[i*people_per_company:(i+1)*people_per_company]
-    if i < extra:
-      companies[i].employees.append(people[len(people)-1-i]) # add one extra
+  people, companies = init(npersons, ncompanies, income, saving_rate)
