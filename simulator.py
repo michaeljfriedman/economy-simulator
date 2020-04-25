@@ -42,6 +42,39 @@ def init(npersons, ncompanies, income, saving_rate):
       companies[i].employees.append(people[len(people)-1-i]) # add one extra
   return people, companies
 
+# Calculates statistics based on the current state of the model. Returns 3
+# values:
+# - person_wealth: a tuple of (min, p10, p25, p50, p75, p90, max) representing
+#   the wealth distribution across people
+# - company_wealth: an analogous tuple for companies
+# - unemployment: the current unemployment rate
+def calculate_stats(people, companies):
+  person_wealth_data = [p.money for p in people]
+  company_wealth_data = [c.money for c in companies]
+
+  person_wealth = (
+    np.min(person_wealth_data),
+    np.percentile(person_wealth_data, 10),
+    np.percentile(person_wealth_data, 25),
+    np.percentile(person_wealth_data, 50),
+    np.percentile(person_wealth_data, 75),
+    np.percentile(person_wealth_data, 90),
+    np.max(person_wealth_data)
+  )
+
+  company_wealth = (
+    np.min(company_wealth_data),
+    np.percentile(company_wealth_data, 10),
+    np.percentile(company_wealth_data, 25),
+    np.percentile(company_wealth_data, 50),
+    np.percentile(company_wealth_data, 75),
+    np.percentile(company_wealth_data, 90),
+    np.max(company_wealth_data)
+  )
+
+  unemployment = np.sum([1 for p in people if not p.employed]) / len(people)
+  return person_wealth, company_wealth, unemployment
+
 # Runs the simulator, given parameters:
 # - npersons (int): the number of people in the model
 # - ncompanies (int): the number of companies in the model
@@ -66,6 +99,10 @@ def run(
   people, companies = init(npersons, ncompanies, income, saving_rate)
 
   # Run simluation
+  pw, cw, u = calculate_stats(people, companies)
+  person_wealth = [pw]
+  company_wealth = [cw]
+  unemployment = [u]
   for i in range(ndays):
     # Each person spends at a random company
     for p in people:
@@ -98,3 +135,15 @@ def run(
           amount = e.income / months_per_year
           c.money -= amount
           e.money += amount
+
+    # Calculate stats
+    pw, cw, u = calculate_stats(people, companies)
+    person_wealth.append(pw)
+    company_wealth.append(cw)
+    unemployment.append(u)
+
+  return {
+    'person_wealth': person_wealth,
+    'company_wealth': company_wealth,
+    'unemployment': unemployment
+  }
