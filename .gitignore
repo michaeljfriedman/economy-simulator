@@ -1,3 +1,5 @@
 __pycache__/
 .vagrant/
 todo.txt
+config.json
+output/
