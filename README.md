@@ -1,6 +1,8 @@
 # Economy Simulation
 
-This project simulates the economy using a simplified model.
+This project simulates the economy using a simplified model. Our goal is to
+see what happens to the distribution of wealth across people and companies, and
+the unemployment rate, when you vary certain parameters.
 
 This README covers how to set up your environment to work on the project or run
 the simulation. For details on how the simulation works, see the
