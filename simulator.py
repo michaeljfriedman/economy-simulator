@@ -117,6 +117,7 @@ def run(
             break
           layoff = np.random.choice(c.employees)
           c.employees.remove(layoff)
+          layoff.employed = False
           if len(c.employees) == 0:
             c.in_business = False
             break
