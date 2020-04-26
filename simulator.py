@@ -44,15 +44,15 @@ def init(npersons, ncompanies, income, saving_rate):
 
 # Calculates statistics based on the current state of the model. Returns 3
 # values:
-# - person_wealth: a tuple of (min, p10, p25, p50, p75, p90, max) representing
+# - person_wealth: a list [min, p10, p25, p50, p75, p90, max] representing
 #   the wealth distribution across people
-# - company_wealth: an analogous tuple for companies
+# - company_wealth: an analogous list for companies
 # - unemployment: the current unemployment rate
 def calculate_stats(people, companies):
   person_wealth_data = [p.money for p in people]
   company_wealth_data = [c.money for c in companies]
 
-  person_wealth = (
+  person_wealth = [
     np.min(person_wealth_data),
     np.percentile(person_wealth_data, 10),
     np.percentile(person_wealth_data, 25),
@@ -60,9 +60,9 @@ def calculate_stats(people, companies):
     np.percentile(person_wealth_data, 75),
     np.percentile(person_wealth_data, 90),
     np.max(person_wealth_data)
-  )
+  ]
 
-  company_wealth = (
+  company_wealth = [
     np.min(company_wealth_data),
     np.percentile(company_wealth_data, 10),
     np.percentile(company_wealth_data, 25),
@@ -70,7 +70,7 @@ def calculate_stats(people, companies):
     np.percentile(company_wealth_data, 75),
     np.percentile(company_wealth_data, 90),
     np.max(company_wealth_data)
-  )
+  ]
 
   unemployment = np.sum([1 for p in people if not p.employed]) / len(people)
   return person_wealth, company_wealth, unemployment
@@ -83,7 +83,7 @@ def calculate_stats(people, companies):
 # - saving_rate (int): the saving rate to apply to all people
 #
 # Returns a dict of results:
-# - person_wealth: a list of (min, p10, p25, p50, p75, p90, max) tuples, one for
+# - person_wealth: a list of [min, p10, p25, p50, p75, p90, max] lists, one for
 #   each day, representing the wealth distribution across people
 # - company_wealth: an analogous list for company wealth
 # - unemployment: a list of unemployment rates, one for each day

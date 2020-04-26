@@ -73,6 +73,6 @@ Vagrant.configure("2") do |config|
     git config --global auto.crlf false
 
     # Install deps
-    pip install argparse numpy
+    pip install argparse numpy matplotlib
   SHELL
 end
