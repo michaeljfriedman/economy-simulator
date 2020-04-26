@@ -52,6 +52,7 @@ Vagrant.configure("2") do |config|
   config.vm.provider "virtualbox" do |vb|
     # Customize the amount of memory on the VM:
     vb.memory = "4096"
+    vb.cpus = "4"
   end
   #
   # View the documentation for the provider you are using for more
@@ -64,15 +65,15 @@ Vagrant.configure("2") do |config|
     apt-get update
     apt-get install -y git python3-pip
 
-    # Set up python3
-    echo "alias python=python3" >> /home/vagrant/.bash_aliases
-    echo "alias pip=pip3" >> /home/vagrant/.bash_aliases
-    chown vagrant:vagrant /home/vagrant/.bash_aliases
+    # Set up python 3
+    rm /usr/bin/python
+    ln -s /usr/bin/python3.6 /usr/bin/python
+    ln -s /usr/bin/pip3 /usr/bin/pip
 
     # Set up git
     git config --global auto.crlf false
 
     # Install deps
-    pip install argparse numpy matplotlib
+    pip install argparse numpy matplotlib tqdm
   SHELL
 end

@@ -42,7 +42,7 @@ def main(argv):
 
   # Write results
   if not os.path.isdir(args.output_dir):
-    os.mkdir(args.output_dir)
+    os.makedirs(args.output_dir, exist_ok=True)
   days = [i for i in range(len(results['unemployment']))]
   for name, data in results.items():
     output_file = os.path.join(args.output_dir, '%s.csv' % name)

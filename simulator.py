@@ -2,6 +2,7 @@
 The simulator.
 '''
 
+from tqdm import tqdm
 import numpy as np
 
 months_per_year = 12
@@ -108,7 +109,7 @@ def run(
   person_wealth = [pw]
   company_wealth = [cw]
   unemployment = [u]
-  for i in range(ndays):
+  for i in tqdm(range(ndays)):
     # At the beginning of each month, reset each person's spending rate
     if i % days_per_month == 0:
       for p in people:
@@ -116,11 +117,11 @@ def run(
         p.spending_rate = np.random.uniform(low=low, high=high)
 
     # Each person spends at a random company
-    for p in people:
+    random_companies = np.random.choice([c for c in companies if c.in_business], len(people))
+    for p, c in zip(people, random_companies):
       if not p.employed:
         continue
 
-      c = np.random.choice([c for c in companies if c.in_business])
       amount = np.min([
         p.spending_rate * p.income / (days_per_month * months_per_year),
         p.money
@@ -135,11 +136,14 @@ def run(
           continue
 
         # Company lays off employees until it can afford payroll
+        layoff_order = np.random.permutation(c.employees)
+        l = 0 # index of next employee to lay off
         while True:
           total_amount = np.sum([e.income / months_per_year for e in c.employees])
           if total_amount <= c.money:
             break
-          layoff = np.random.choice(c.employees)
+          layoff = layoff_order[l]
+          l += 1
           c.employees.remove(layoff)
           layoff.employed = False
           if len(c.employees) == 0:
