@@ -34,7 +34,7 @@ def main(argv):
     ncompanies=config['ncompanies'],
     ndays=config['ndays'],
     income=config['income'],
-    saving_rate=config['saving_rate']
+    spending_range=config['spending_range']
   )
 
   # Convert unemployment results to csv-writable format

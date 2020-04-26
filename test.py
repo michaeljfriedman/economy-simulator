@@ -45,7 +45,7 @@ def test_basic_one_day():
     ncompanies=1,
     ndays=1,
     income=1200,
-    saving_rate=0.25
+    spending_range=[0.75, 0.75]
   )
   actual = {
     'person_wealth': results['person_wealth'][1],
@@ -69,13 +69,13 @@ def test_basic_one_day():
   print('Passed')
 
 def test_basic_30_days():
-  print('Check that the last-day results of a 30 day simulation (1 pay cycle) are correct (1 person, 1 company, income 1200, saving rate 0.25)')
+  print('Check that the last-day results of a 31 day simulation (1 pay cycle) are correct (1 person, 1 company, income 1200, saving rate 0.25)')
   results = simulator.run(
     npersons=1,
     ncompanies=1,
-    ndays=30,
+    ndays=31,
     income=1200,
-    saving_rate=0.25
+    spending_range=[0.75, 0.75]
   )
   spent = 75
   person_money = 300 + 100 - spent

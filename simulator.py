@@ -10,11 +10,12 @@ days_per_month = 30
 # A person in the model
 class Person:
 
-  def __init__(self, money=0, income=0, saving_rate=0.3, employed=True):
+  def __init__(self, money=0, income=0, spending_range=[0.7, 1.3], employed=True):
     self.money = money
     self.income = income
-    self.saving_rate = saving_rate
+    self.spending_range = spending_range
     self.employed = employed
+    self.spending_rate = 0 # the current spending rate this month
 
 # A company in the model
 class Company:
@@ -25,12 +26,12 @@ class Company:
     self.in_business = in_business
 
 # Initializes the simulator. Returns the list of people and companies
-def init(npersons, ncompanies, income, saving_rate):
+def init(npersons, ncompanies, income, spending_range):
   people = [
     Person(
       money=income/4, # 3 months' income
       income=income,
-      saving_rate=saving_rate
+      spending_range=spending_range
     ) for i in range(npersons)
   ]
   companies = [Company() for i in range(ncompanies)]
@@ -82,7 +83,9 @@ def calculate_stats(people, companies):
 # - ncompanies (int): the number of companies in the model
 # - ndays (int): the number of days to run for
 # - income (int): annual income to apply to all people
-# - saving_rate (int): the saving rate to apply to all people
+# - spending_range (list of floats): a list [min_fraction, max_fraction]
+#   representing the range of their income people may spend each month. A value
+#   from this range is chosen uniformly at random each month for each person.
 #
 # Returns a dict of results:
 # - person_wealth: a list of [min, p10, p25, p50, p75, p90, max] lists, one for
@@ -94,11 +97,11 @@ def run(
   ncompanies=0,
   ndays=0,
   income=65000,
-  saving_rate=0.3
+  spending_range=[0.7, 1.3]
   ):
 
   # Set up simulation
-  people, companies = init(npersons, ncompanies, income, saving_rate)
+  people, companies = init(npersons, ncompanies, income, spending_range)
 
   # Run simluation
   pw, cw, u = calculate_stats(people, companies)
@@ -106,13 +109,22 @@ def run(
   company_wealth = [cw]
   unemployment = [u]
   for i in range(ndays):
+    # At the beginning of each month, reset each person's spending rate
+    if i % days_per_month == 0:
+      for p in people:
+        low, high = p.spending_range
+        p.spending_rate = np.random.uniform(low=low, high=high)
+
     # Each person spends at a random company
     for p in people:
       if not p.employed:
         continue
 
       c = np.random.choice([c for c in companies if c.in_business])
-      amount = ((1 - p.saving_rate) * p.income) / (days_per_month * months_per_year)
+      amount = np.min([
+        p.spending_rate * p.income / (days_per_month * months_per_year),
+        p.money
+      ])
       p.money -= amount
       c.money += amount
 
