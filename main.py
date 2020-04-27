@@ -17,6 +17,24 @@ import os
 import simulator
 import sys
 
+# Plots results to a file.
+# - days: a parallel list numbering the days. This will be the x axis
+# - results: a dict of results. Each key is the name of the result, and maps
+#   to a list of values to plot, one for each day. e.g. {'result1': [0, 1, 2]}.
+#   These will be the y-axis, with each result plotted on a subplot.
+# - output_file: the file to write the plot to
+# - sample (optional): a lambda mapping a full list of values to a subset of
+#   values. This will be used to sample the data in the plot.
+def plot_results(days, results, output_file, sample=lambda x: x):
+  f = plt.figure(1, figsize=(20, 15))
+  nresults = len(results.keys())
+  for i, name in zip(range(1, nresults+1), results.keys()):
+    ax = f.add_subplot(3, 1, i)
+    ax.plot(sample(days), sample(results[name]))
+    ax.set_title(name)
+    ax.grid()
+  plt.savefig(output_file)
+
 def main(argv):
   # Parse config
   parser = argparse.ArgumentParser()
@@ -51,15 +69,10 @@ def main(argv):
       rows = [[day] + row for day, row in zip(days, data)]
       w.writerows(rows)
 
-  # Create plots of results
-  f = plt.figure(1, figsize=(20, 15))
-  for i, name in zip(range(1, 4), results.keys()):
-    ax = f.add_subplot(3, 1, i)
-    ax.plot(days, results[name])
-    ax.set_title(name)
-    ax.grid()
+  # Create plots of results, sampling the first day of each month
+  sample = lambda x: [x[0]] + [x[i] for i in range(1, len(x), simulator.days_per_month)]
   output_file = os.path.join(args.output_dir, 'plot.png')
-  plt.savefig(output_file)
+  plot_results(days, results, output_file, sample=sample)
 
 if __name__ == '__main__':
   main(sys.argv[1:])

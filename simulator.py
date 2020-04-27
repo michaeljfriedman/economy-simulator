@@ -25,14 +25,10 @@ class Person:
 # A company in the model
 class Company:
 
-  def __init__(self, money=0, employees=[], in_business=True, pay_day=None):
+  def __init__(self, money=0, employees=[], in_business=True):
     self.money = money
     self.employees = employees
     self.in_business = in_business
-    if pay_day == None:
-      self.pay_day = np.random.randint(days_per_month)
-    else:
-      self.pay_day = pay_day
 
 # Initializes the simulator. Returns the list of people and companies
 def init(npersons, ncompanies, income, spending_range):
@@ -133,34 +129,32 @@ def run(
         p.money -= amount
         c.money += amount
 
-    # Companies pay their employees if it's their pay day
-    for c in companies:
-      if not c.in_business:
-        continue
+    # Companies pay their employees at the end of the month
+    if i % days_per_month == days_per_month - 1:
+      for c in companies:
+        if not c.in_business:
+          continue
 
-      if i % days_per_month != c.pay_day:
-        continue
+        # Company lays off employees until it can afford payroll
+        layoff_order = np.random.permutation(c.employees)
+        l = 0 # index of next employee to lay off
+        while True:
+          total_amount = np.sum([e.income / months_per_year for e in c.employees])
+          if total_amount <= c.money:
+            break
+          layoff = layoff_order[l]
+          l += 1
+          c.employees.remove(layoff)
+          layoff.employed = False
+          if len(c.employees) == 0:
+            c.in_business = False
+            break
 
-      # Company lays off employees until it can afford payroll
-      layoff_order = np.random.permutation(c.employees)
-      l = 0 # index of next employee to lay off
-      while True:
-        total_amount = np.sum([e.income / months_per_year for e in c.employees])
-        if total_amount <= c.money:
-          break
-        layoff = layoff_order[l]
-        l += 1
-        c.employees.remove(layoff)
-        layoff.employed = False
-        if len(c.employees) == 0:
-          c.in_business = False
-          break
-
-      for e in c.employees:
-        amount = e.income / months_per_year
-        c.money -= amount
-        e.money += amount
-        e.reset_spending_rate()
+        for e in c.employees:
+          amount = e.income / months_per_year
+          c.money -= amount
+          e.money += amount
+          e.reset_spending_rate()
 
     # Calculate stats
     pw, cw, u = calculate_stats(people, companies)

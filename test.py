@@ -66,24 +66,17 @@ def test_basic_one_day():
     'unemployment': results['unemployment'][1]
   }
   spent = 75 / 30
-  person_money1 = 300 - spent # if pay day is not the first day
-  company_money1 = 300 + spent
-  person_money2 = 300 + 100 - spent # if pay day is the first day
-  company_money2 = 300 - 100 + spent
-  expected1 = {
-    'person_wealth': [person_money1, person_money1, person_money1, person_money1, person_money1, person_money1, person_money1],
-    'company_wealth': [company_money1, company_money1, company_money1, company_money1, company_money1, company_money1, company_money1],
-    'unemployment': 0
-  }
-  expected2 = {
-    'person_wealth': [person_money2, person_money2, person_money2, person_money2, person_money2, person_money2, person_money2],
-    'company_wealth': [company_money2, company_money2, company_money2, company_money2, company_money2, company_money2, company_money2],
+  person_money = 300 - spent
+  company_money = 300 + spent
+  expected = {
+    'person_wealth': [person_money, person_money, person_money, person_money, person_money, person_money, person_money],
+    'company_wealth': [company_money, company_money, company_money, company_money, company_money, company_money, company_money],
     'unemployment': 0
   }
   for name in ['person_wealth', 'company_wealth', 'unemployment']:
-    if actual[name] != expected1[name] and actual[name] != expected2[name]:
+    if actual[name] != expected[name]:
       print('Failed: Result %s was wrong' % name)
-      print('Expected: one of %s or %s' % (str(expected1[name]), str(expected2[name])))
+      print('Expected: %s' % str(expected[name]))
       print('Actual:   %s' % str(actual[name]))
       return
   print('Passed')
