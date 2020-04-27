@@ -16,15 +16,23 @@ class Person:
     self.income = income
     self.spending_range = spending_range
     self.employed = employed
-    self.spending_rate = 0 # the current spending rate this month
+    self.reset_spending_rate() # the current spending rate this month
+
+  def reset_spending_rate(self):
+    low, high = self.spending_range
+    self.spending_rate = np.random.uniform(low=low, high=high)
 
 # A company in the model
 class Company:
 
-  def __init__(self, money=0, employees=[], in_business=True):
+  def __init__(self, money=0, employees=[], in_business=True, pay_day=None):
     self.money = money
     self.employees = employees
     self.in_business = in_business
+    if pay_day == None:
+      self.pay_day = np.random.randint(days_per_month)
+    else:
+      self.pay_day = pay_day
 
 # Initializes the simulator. Returns the list of people and companies
 def init(npersons, ncompanies, income, spending_range):
@@ -110,50 +118,49 @@ def run(
   company_wealth = [cw]
   unemployment = [u]
   for i in tqdm(range(ndays)):
-    # At the beginning of each month, reset each person's spending rate
-    if i % days_per_month == 0:
-      for p in people:
-        low, high = p.spending_range
-        p.spending_rate = np.random.uniform(low=low, high=high)
-
     # Each person spends at a random company
-    random_companies = np.random.choice([c for c in companies if c.in_business], len(people))
-    for p, c in zip(people, random_companies):
-      if not p.employed:
-        continue
-
-      amount = np.min([
-        p.spending_rate * p.income / (days_per_month * months_per_year),
-        p.money
-      ])
-      p.money -= amount
-      c.money += amount
-
-    # At the end of each month, companies pay their employees
-    if i % days_per_month == days_per_month - 1:
-      for c in companies:
-        if not c.in_business:
+    in_business = [c for c in companies if c.in_business]
+    if len(in_business) != 0:
+      random_companies = np.random.choice(in_business, len(people))
+      for p, c in zip(people, random_companies):
+        if not p.employed:
           continue
 
-        # Company lays off employees until it can afford payroll
-        layoff_order = np.random.permutation(c.employees)
-        l = 0 # index of next employee to lay off
-        while True:
-          total_amount = np.sum([e.income / months_per_year for e in c.employees])
-          if total_amount <= c.money:
-            break
-          layoff = layoff_order[l]
-          l += 1
-          c.employees.remove(layoff)
-          layoff.employed = False
-          if len(c.employees) == 0:
-            c.in_business = False
-            break
+        amount = np.min([
+          p.spending_rate * p.income / (days_per_month * months_per_year),
+          p.money
+        ])
+        p.money -= amount
+        c.money += amount
 
-        for e in c.employees:
-          amount = e.income / months_per_year
-          c.money -= amount
-          e.money += amount
+    # Companies pay their employees if it's their pay day
+    for c in companies:
+      if not c.in_business:
+        continue
+
+      if i % days_per_month != c.pay_day:
+        continue
+
+      # Company lays off employees until it can afford payroll
+      layoff_order = np.random.permutation(c.employees)
+      l = 0 # index of next employee to lay off
+      while True:
+        total_amount = np.sum([e.income / months_per_year for e in c.employees])
+        if total_amount <= c.money:
+          break
+        layoff = layoff_order[l]
+        l += 1
+        c.employees.remove(layoff)
+        layoff.employed = False
+        if len(c.employees) == 0:
+          c.in_business = False
+          break
+
+      for e in c.employees:
+        amount = e.income / months_per_year
+        c.money -= amount
+        e.money += amount
+        e.reset_spending_rate()
 
     # Calculate stats
     pw, cw, u = calculate_stats(people, companies)

@@ -51,16 +51,16 @@ Simulation:
 
 - Initialization:
   - Each person is assigned to a company (people are divided among companies
-    evenly)
-  - Each company gets money to cover 1 year's worth of payroll
-- Every month (30 days):
-  - Each company pays each of their employees 1 month's income. If they don't
-    have enough money to cover it, they pick a random person to lay off until
-    they do. If they run out of employees, they go out of business (removed from
-    the economy).
+    evenly), and gets 3 months income
+  - Each company gets money to cover 3 months' worth of payroll, and is assigned
+    a "pay day" (the day of the month when they pay their employees)
 - Each day:
   - Each person picks a random company and spends 1/30 of their monthly
     spending to that company
+  - If it's a company's pay day, they pay their employees 1 month's income. If
+    they don't have enough money to cover it, they pick a random person to lay
+    off until they do. If they run out of employees, they go out of business
+    (removed from the economy).
 
 ## Config format
 
