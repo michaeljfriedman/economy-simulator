@@ -34,7 +34,7 @@ class Company:
 def init(npersons, ncompanies, income, spending_range):
   people = [
     Person(
-      money=income/4, # 3 months' income
+      money=income/months_per_year, # 1 month income
       income=income,
       spending_range=spending_range
     ) for i in range(npersons)
@@ -46,8 +46,8 @@ def init(npersons, ncompanies, income, spending_range):
     companies[i].employees = people[i*people_per_company:(i+1)*people_per_company]
     if i < extra:
       companies[i].employees.append(people[len(people)-1-i]) # add one extra
-    companies[i].money = np.sum([3 * e.income / months_per_year
-      for e in companies[i].employees]) # 3 months' worth of payroll
+    companies[i].money = np.sum([e.income / months_per_year
+      for e in companies[i].employees]) # 1 months' worth of payroll
   return people, companies
 
 # Calculates statistics based on the current state of the model. Returns 3
@@ -93,6 +93,8 @@ def calculate_stats(people, companies):
 # - spending_range (list of floats): a list [min_fraction, max_fraction]
 #   representing the range of their income people may spend each month. A value
 #   from this range is chosen uniformly at random each month for each person.
+# - rehire_rate (float): the probability of an unemployed person being rehired
+#   when an opportunity arises
 #
 # Returns a dict of results:
 # - person_wealth: a list of [min, p10, p25, p50, p75, p90, max] lists, one for
@@ -106,7 +108,8 @@ def run(
   ncompanies=0,
   ndays=0,
   income=65000,
-  spending_range=[0.7, 1.3]
+  spending_range=[0.7, 1.3],
+  rehire_rate=1.0
   ):
 
   # Set up simulation
@@ -124,9 +127,6 @@ def run(
     if len(in_business) != 0:
       random_companies = np.random.choice(in_business, len(people))
       for p, c in zip(people, random_companies):
-        if not p.employed:
-          continue
-
         amount = np.min([
           p.spending_rate * p.income / (days_per_month * months_per_year),
           p.money
@@ -134,8 +134,27 @@ def run(
         p.money -= amount
         c.money += amount
 
-    # Companies pay their employees at the end of the month
+    # At the end of the month, companies hire new employees and pay their
+    # employees
     if i % days_per_month == days_per_month - 1:
+      # Hire unemployed people
+      unemployed = np.random.permutation([p for p in people if not p.employed])
+      in_business = [c for c in companies if c.in_business]
+      rehires = np.random.rand(len(unemployed)) <= rehire_rate # whether to rehire each person
+      rands = np.random.rand(len(unemployed)) # rand #s used to select the company that will hire this person
+      payroll = lambda c: np.sum([e.income / months_per_year for e in c.employees])
+      for p, rehire, r in zip(unemployed, rehires, rands):
+        if not rehire:
+          continue
+        new_hire_pay = p.income / months_per_year
+        can_afford = [c for c in in_business if payroll(c) + new_hire_pay <= c.money]
+        if len(can_afford) == 0:
+          continue
+        rand_index = int(r * len(can_afford))
+        can_afford[rand_index].employees.append(p)
+        p.employed = True
+
+      # Pay employees
       for c in companies:
         if not c.in_business:
           continue
@@ -159,7 +178,10 @@ def run(
           amount = e.income / months_per_year
           c.money -= amount
           e.money += amount
-          e.reset_spending_rate()
+
+      # Reset people's spending rates
+      for p in people:
+        p.reset_spending_rate()
 
     # Calculate stats
     pw, cw, u, oob = calculate_stats(people, companies)
