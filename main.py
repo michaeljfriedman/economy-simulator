@@ -29,7 +29,7 @@ def plot_results(days, results, output_file, sample=lambda x: x):
   f = plt.figure(1, figsize=(20, 15))
   nresults = len(results.keys())
   for i, name in zip(range(1, nresults+1), results.keys()):
-    ax = f.add_subplot(3, 1, i)
+    ax = f.add_subplot(nresults, 1, i)
     ax.plot(sample(days), sample(results[name]))
     ax.set_title(name)
     ax.grid()
@@ -55,8 +55,9 @@ def main(argv):
     spending_range=config['spending_range']
   )
 
-  # Convert unemployment results to csv-writable format
+  # Convert results to csv-writable format
   results['unemployment'] = list(map(lambda x: [x], results['unemployment']))
+  results['out_of_business'] = list(map(lambda x: [x], results['out_of_business']))
 
   # Write results
   if not os.path.isdir(args.output_dir):

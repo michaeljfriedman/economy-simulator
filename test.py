@@ -63,7 +63,8 @@ def test_basic_one_day():
   actual = {
     'person_wealth': results['person_wealth'][1],
     'company_wealth': results['company_wealth'][1],
-    'unemployment': results['unemployment'][1]
+    'unemployment': results['unemployment'][1],
+    'out_of_business': results['out_of_business'][1]
   }
   spent = 75 / 30
   person_money = 300 - spent
@@ -71,9 +72,10 @@ def test_basic_one_day():
   expected = {
     'person_wealth': [person_money, person_money, person_money, person_money, person_money, person_money, person_money],
     'company_wealth': [company_money, company_money, company_money, company_money, company_money, company_money, company_money],
-    'unemployment': 0
+    'unemployment': 0,
+    'out_of_business': 0
   }
-  for name in ['person_wealth', 'company_wealth', 'unemployment']:
+  for name in expected.keys():
     if actual[name] != expected[name]:
       print('Failed: Result %s was wrong' % name)
       print('Expected: %s' % str(expected[name]))
@@ -96,14 +98,16 @@ def test_basic_30_days():
   actual = {
     'person_wealth': results['person_wealth'][30],
     'company_wealth': results['company_wealth'][30],
-    'unemployment': results['unemployment'][30]
+    'unemployment': results['unemployment'][30],
+    'out_of_business': results['out_of_business'][30]
   }
   expected = {
     'person_wealth': [person_money, person_money, person_money, person_money, person_money, person_money, person_money],
     'company_wealth': [company_money, company_money, company_money, company_money, company_money, company_money, company_money],
-    'unemployment': 0
+    'unemployment': 0,
+    'out_of_business': 0
   }
-  for name in ['person_wealth', 'company_wealth', 'unemployment']:
+  for name in expected.keys():
     if actual[name] != expected[name]:
       print('Failed: Result %s was wrong' % name)
       print('Expected: %s' % str(expected[name]))

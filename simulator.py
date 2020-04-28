@@ -56,6 +56,7 @@ def init(npersons, ncompanies, income, spending_range):
 #   the wealth distribution across people
 # - company_wealth: an analogous list for companies
 # - unemployment: the current unemployment rate
+# - out_of_business: the current fraction of companies out of business
 def calculate_stats(people, companies):
   person_wealth_data = [p.money for p in people]
   company_wealth_data = [c.money for c in companies]
@@ -81,7 +82,8 @@ def calculate_stats(people, companies):
   ]
 
   unemployment = np.sum([1 for p in people if not p.employed]) / len(people)
-  return person_wealth, company_wealth, unemployment
+  out_of_business = np.sum([1 for c in companies if not c.in_business]) / len(companies)
+  return person_wealth, company_wealth, unemployment, out_of_business
 
 # Runs the simulator, given parameters:
 # - npersons (int): the number of people in the model
@@ -97,6 +99,8 @@ def calculate_stats(people, companies):
 #   each day, representing the wealth distribution across people
 # - company_wealth: an analogous list for company wealth
 # - unemployment: a list of unemployment rates, one for each day
+# - out_of_business: a list of out-of-business rates (fraction of companies
+#   out of business), one for each day
 def run(
   npersons=0,
   ncompanies=0,
@@ -109,10 +113,11 @@ def run(
   people, companies = init(npersons, ncompanies, income, spending_range)
 
   # Run simluation
-  pw, cw, u = calculate_stats(people, companies)
+  pw, cw, u, oob = calculate_stats(people, companies)
   person_wealth = [pw]
   company_wealth = [cw]
   unemployment = [u]
+  out_of_business = [oob]
   for i in tqdm(range(ndays)):
     # Each person spends at a random company
     in_business = [c for c in companies if c.in_business]
@@ -157,13 +162,15 @@ def run(
           e.reset_spending_rate()
 
     # Calculate stats
-    pw, cw, u = calculate_stats(people, companies)
+    pw, cw, u, oob = calculate_stats(people, companies)
     person_wealth.append(pw)
     company_wealth.append(cw)
     unemployment.append(u)
+    out_of_business.append(oob)
 
   return {
     'person_wealth': person_wealth,
     'company_wealth': company_wealth,
-    'unemployment': unemployment
+    'unemployment': unemployment,
+    'out_of_business': out_of_business
   }
