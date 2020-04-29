@@ -11,41 +11,33 @@ The basic model works like this. There are two kinds of entities: *people* and
 *companies*. Each person works for a company, and receives fixed income from it
 each month. They spend a portion of their income at different companies during
 the course of each month, saving if they have any leftover. Companies lay off
-employees when they can no longer afford to pay them, and go out of business
-when they have no more employees. We run this system for a fixed period of time.
-People and companies may build wealth, scrape by, or collapse, according to this
-probabilistic model.
+employees when they can no longer afford to pay them, hire new ones if they can
+afford to, and go out of business when they have no more employees. We run this
+system for a fixed period of time. People and companies may build wealth,
+scrape by, or collapse, according to this probabilistic model.
 
-Future versions will tweak/add other parameters, but this is the foundation.
-Some examples:
+We're primarily interested in two things:
 
-- People have different income levels
-- People have different spending/saving rates
-- Companies have expenses other than payroll, paying other companies
-- Unemployed people can be rehired
-- Companies are distributed across different *industries* (e.g. restaurants,
-  housing, entertainment, etc.). Spending (by people and companies) happens
-  across different industries
-- People and companies vary how much they spend depending on the industry
-- People and companies have a pre-determined set of expenses (rather than a
-  general spending/savings rate), which they have to pay even when they're
-  unemployed
-- After some time, spending is blocked in certain industries (e.g. like in an
-  shutdown in response to a pandemic)
+1. Understanding a "normal" economy: Under "normal" conditions, where does the
+   money go (the distribution of wealth across people and companies), how does
+   the unemployment rate look, and how does company survival rate look (do some
+   companies die out)? Is there an equilibrium? Which variables affect this
+   outcome (e.g. size of the economy, income distribution, etc.)?
+2. The effects of a shutdown (e.g. during a pandemic): What happens if consumers
+   are temporarily blocked from spending in certain areas?
 
 ## Version 1: Basic model
-
-Key points:
-
-- Everyone makes the same amount of money, and spends at the same rate
-- Variable: *which companies* people spend their money to
 
 Fixed parameters:
 
 - Number of people
 - Number of companies
 - Income per person
-- Spending vs saving rate per person
+
+Random variables:
+
+- How much money people spend each month
+- Which companies people spend their money at
 
 Simulation:
 
@@ -62,6 +54,23 @@ Simulation:
     off until they do. If they run out of employees, they go out of business
     (removed from the economy).
 
+## Version 2: Adds rehiring
+
+Fixed parameters:
+
+- Parameters from v1
+- People are always rehired when an opportunity arises
+
+Random variables:
+
+- Parameters from v1
+
+Simulation:
+
+- Add that each month, all unemployed people are rehired by a company, if one
+  can afford them. Unemployed people are divided among companies as evenly as
+  possible.
+
 ## Config format
 
 The config is a JSON object with the parameters:
@@ -77,6 +86,8 @@ The config is a JSON object with the parameters:
   max_fraction] representing the range of their income people may spend each
   month. A value from this range is chosen uniformly at random each month for
   each person.
+- `rehire_rate` (float): the probability that an unemployed is rehired when
+  an opportunity arises.
 
 Example:
 
@@ -86,6 +97,7 @@ Example:
   "ncompanies": 100,
   "ndays": 360,
   "income": 65000,
-  "spending_range": [0.75, 1.25]
+  "spending_range": [0.75, 1.25],
+  "rehire_rate": 1.0
 }
 ```

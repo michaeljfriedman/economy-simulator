@@ -52,7 +52,8 @@ def main(argv):
     ncompanies=config['ncompanies'],
     ndays=config['ndays'],
     income=config['income'],
-    spending_range=config['spending_range']
+    spending_range=config['spending_range'],
+    rehire_rate=config['rehire_rate']
   )
 
   # Convert results to csv-writable format
