@@ -13,6 +13,7 @@ import argparse
 import csv
 import json
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import simulator
 import sys
@@ -71,7 +72,11 @@ def main(argv):
       rows = [[day] + row for day, row in zip(days, data)]
       w.writerows(rows)
 
-  # Create plots of results, sampling the first day of each month
+  # Create plots of results, sampling the first day of each month, and limiting
+  # to only a subset of percentiles in the wealth distributions
+  percentiles = [0, 10, 25, 50, 75, 90, 100]
+  for name in ['person_wealth', 'company_wealth']:
+    results[name] = np.array(results[name])[:,percentiles]
   sample = lambda x: [x[0]] + [x[i] for i in range(1, len(x), simulator.days_per_month)]
   output_file = os.path.join(args.output_dir, 'plot.png')
   plot_results(days, results, output_file, sample=sample)
