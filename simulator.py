@@ -114,19 +114,28 @@ def run(
       # Hire unemployed people
       unemployed = np.random.permutation([p for p in people if not p.employed])
       in_business = [c for c in companies if c.in_business]
-      rehires = np.random.rand(len(unemployed)) <= rehire_rate # whether to rehire each person
-      rands = np.random.rand(len(unemployed)) # rand #s used to select the company that will hire this person
-      payroll = lambda c: np.sum([e.income / months_per_year for e in c.employees])
-      for p, rehire, r in zip(unemployed, rehires, rands):
-        if not rehire:
+
+      rehire = np.random.rand(len(unemployed)) <= rehire_rate # whether to rehire each person
+      rands = np.random.rand(len(unemployed)) # rand numbers used to select the company that will hire this person
+
+      # Build an array where entry (i, j) is whether company j can afford to hire person i
+      cost_of_new_hire = np.array([p.income / months_per_year for p in unemployed])
+      company_money = np.array([c.money for c in in_business])
+      company_payroll = np.array([np.sum([e.income / months_per_year for e in c.employees]) for c in in_business])
+      can_afford = np.outer(1/cost_of_new_hire, company_money - company_payroll) >= 1
+
+      # Pick the company that will hire each person
+      for i in range(len(unemployed)):
+        if not rehire[i]:
           continue
-        new_hire_pay = p.income / months_per_year
-        can_afford = [c for c in in_business if payroll(c) + new_hire_pay <= c.money]
-        if len(can_afford) == 0:
+        c_indices = np.argwhere(can_afford[i,:]) # indices of True values
+        if c_indices.shape[0] == 0:
           continue
-        rand_index = int(r * len(can_afford))
-        can_afford[rand_index].employees.append(p)
-        p.employed = True
+        r = int(rands[i] * c_indices.shape[0])
+        c_index = c_indices[r,0] # random company among the True values
+        c = in_business[c_index]
+        c.employees.append(unemployed[i])
+        unemployed[i].employed = True
 
       # Pay employees
       for c in companies:
