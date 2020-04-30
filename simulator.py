@@ -11,16 +11,14 @@ days_per_month = 30
 # A person in the model
 class Person:
 
-  def __init__(self, money=0, income=0, spending_range=[0.7, 1.3], employed=True):
+  def __init__(self, money=0, income=0, employed=True):
     self.money = money
     self.income = income
-    self.spending_range = spending_range
     self.employed = employed
     self.reset_spending_rate() # the current spending rate this month
 
   def reset_spending_rate(self):
-    low, high = self.spending_range
-    self.spending_rate = np.random.uniform(low=low, high=high)
+    self.spending_rate = np.random.uniform()
 
 # A company in the model
 class Company:
@@ -31,12 +29,11 @@ class Company:
     self.in_business = in_business
 
 # Initializes the simulator. Returns the list of people and companies
-def init(npersons, ncompanies, income, spending_range):
+def init(npersons, ncompanies, income):
   people = [
     Person(
       money=income/months_per_year, # 1 month income
-      income=income,
-      spending_range=spending_range
+      income=income
     ) for i in range(npersons)
   ]
   companies = [Company() for i in range(ncompanies)]
@@ -74,9 +71,6 @@ def calculate_stats(people, companies):
 # - ncompanies (int): the number of companies in the model
 # - ndays (int): the number of days to run for
 # - income (int): annual income to apply to all people
-# - spending_range (list of floats): a list [min_fraction, max_fraction]
-#   representing the range of their income people may spend each month. A value
-#   from this range is chosen uniformly at random each month for each person.
 # - rehire_rate (float): the probability of an unemployed person being rehired
 #   when an opportunity arises
 #
@@ -92,12 +86,11 @@ def run(
   ncompanies=0,
   ndays=0,
   income=65000,
-  spending_range=[0.7, 1.3],
   rehire_rate=1.0
   ):
 
   # Set up simulation
-  people, companies = init(npersons, ncompanies, income, spending_range)
+  people, companies = init(npersons, ncompanies, income)
 
   # Run simluation
   pw, cw, u, oob = calculate_stats(people, companies)
@@ -111,10 +104,7 @@ def run(
     if len(in_business) != 0:
       random_companies = np.random.choice(in_business, len(people))
       for p, c in zip(people, random_companies):
-        amount = np.min([
-          p.spending_rate * p.income / (days_per_month * months_per_year),
-          p.money
-        ])
+        amount = p.spending_rate * p.money / days_per_month
         p.money -= amount
         c.money += amount
 

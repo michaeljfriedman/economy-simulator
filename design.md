@@ -9,8 +9,8 @@ rate.
 
 The basic model works like this. There are two kinds of entities: *people* and
 *companies*. Each person works for a company, and receives fixed income from it
-each month. They spend a portion of their income at different companies during
-the course of each month, saving if they have any leftover. Companies lay off
+each month. They spend a portion of their wealth at different companies during
+the course of each month, saving anything they have leftover. Companies lay off
 employees when they can no longer afford to pay them, hire new ones if they can
 afford to, and go out of business when they have no more employees. We run this
 system for a fixed period of time. People and companies may build wealth,
@@ -43,9 +43,8 @@ Simulation:
 
 - Initialization:
   - Each person is assigned to a company (people are divided among companies
-    evenly), and gets 3 months income
-  - Each company gets money to cover 3 months' worth of payroll, and is assigned
-    a "pay day" (the day of the month when they pay their employees)
+    evenly), and gets 1 month income
+  - Each company gets money to cover 1 month's worth of payroll
 - Each day:
   - Each person picks a random company and spends 1/30 of their monthly
     spending to that company
@@ -67,9 +66,8 @@ Random variables:
 
 Simulation:
 
-- Add that each month, all unemployed people are rehired by a company, if one
-  can afford them. Unemployed people are divided among companies as evenly as
-  possible.
+- Add: each month, unemployed people are rehired if a company can afford them,
+  and are distributed evenly among companies.
 
 ## Config format
 
@@ -82,10 +80,6 @@ The config is a JSON object with the parameters:
 - `income` (int): annual income of each person in the model. An employed person
   receives an equal amount of this each month (there are 12 months in each year
   in this model)
-- `spending_range` (array of floats): a 2-element array [min_fraction,
-  max_fraction] representing the range of their income people may spend each
-  month. A value from this range is chosen uniformly at random each month for
-  each person.
 - `rehire_rate` (float): the probability that an unemployed is rehired when
   an opportunity arises.
 
@@ -97,7 +91,6 @@ Example:
   "ncompanies": 100,
   "ndays": 360,
   "income": 65000,
-  "spending_range": [0.75, 1.25],
   "rehire_rate": 1.0
 }
 ```
