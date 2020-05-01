@@ -55,6 +55,19 @@ def init(npersons, ncompanies, income):
       for e in companies[i].employees]) # 1 months' worth of payroll
   return people, companies
 
+# Given the list of people and companies, each person spends a portion of their
+# monthly spending money at a random company. Returns the new list of people
+# and companies.
+def spend(people, companies):
+  in_business = [c for c in companies if c.in_business]
+  if len(in_business) != 0:
+    random_companies = np.random.choice(in_business, len(people))
+    for p, c in zip(people, random_companies):
+      amount = p.spending_rate * p.money / days_per_month
+      p.money -= amount
+      c.money += amount
+  return people, companies
+
 # Given the list of people and companies and the probability of rehiring,
 # companies than can afford to hire unemployed people do so with that
 # probability, giving each person an equally likely chance of being hired
@@ -141,13 +154,7 @@ def run(
   out_of_business = [oob]
   for i in tqdm(range(ndays)):
     # Each person spends at a random company
-    in_business = [c for c in companies if c.in_business]
-    if len(in_business) != 0:
-      random_companies = np.random.choice(in_business, len(people))
-      for p, c in zip(people, random_companies):
-        amount = p.spending_rate * p.money / days_per_month
-        p.money -= amount
-        c.money += amount
+    people, companies = spend(people, companies)
 
     # At the end of the month, companies hire new employees and pay their
     # employees

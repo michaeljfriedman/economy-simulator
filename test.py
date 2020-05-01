@@ -49,36 +49,38 @@ def test_init_spending_rate():
       return
   print('Passed')
 
-def test_basic_one_day():
-  print('Check that last-day results of a 1 day simulation are correct (1 person, 1 company, income 1200, saving rate 0.25)')
-  results = simulator.run(
-    npersons=1,
-    ncompanies=1,
-    ndays=1,
-    income=1200,
-    spending_range=[0.75, 0.75]
-  )
-  actual = {
-    'person_wealth': results['person_wealth'][1],
-    'company_wealth': results['company_wealth'][1],
-    'unemployment': results['unemployment'][1],
-    'out_of_business': results['out_of_business'][1]
-  }
-  spent = 75 / 30
-  person_money = 300 - spent
-  company_money = 300 + spent
-  expected = {
-    'person_wealth': [person_money, person_money, person_money, person_money, person_money, person_money, person_money],
-    'company_wealth': [company_money, company_money, company_money, company_money, company_money, company_money, company_money],
-    'unemployment': 0,
-    'out_of_business': 0
-  }
-  for name in expected.keys():
-    if actual[name] != expected[name]:
-      print('Failed: Result %s was wrong' % name)
-      print('Expected: %s' % str(expected[name]))
-      print('Actual:   %s' % str(actual[name]))
-      return
+def test_people_spending():
+  print('Check that people spend a valid amount to companies (1 person, 2 companies)')
+  p_money = 100
+  c_money = 0
+  p = simulator.Person(money=p_money)
+  c1 = simulator.Company(money=c_money)
+  c2 = simulator.Company(money=c_money)
+  people, companies = simulator.spend([p], [c1, c2])
+
+  if not (people[0].money < p_money and (companies[0].money > c_money
+    or companies[1].money > c_money)):
+    print('Failed: money was not spent correctly')
+    print('Expected: p.money > %.2f, c1.money or c2.money > %.2f' % (p_money, c_money))
+    print('Actual:   p.money = %.2f, c1.money = %.2f, c2.money = %.2f' (
+      people[0].money, companies[0].money, companies[1].money
+    ))
+    return
+  print('Passed')
+
+def test_people_spending_when_out_of_business():
+  print("Check that people don't spend to an out of business company (1 person, 1 company)")
+  p_money = 100
+  c_money = 0
+  p = simulator.Person(money=p_money)
+  c = simulator.Company(money=c_money, in_business=False)
+  people, companies = simulator.spend([p], [c])
+
+  if people[0].money != 100 or companies[0].money != 0:
+    print("Failed: someone's money changed")
+    print('Expected: p.money=%.2f, c.money=%.2f' % (p_money, c_money))
+    print('Actual:   p.money=%.2f, c.money=%.2f' % (people[0].money, companies[0].money))
+    return
   print('Passed')
 
 def test_basic_30_days():
@@ -148,8 +150,9 @@ def main():
   test_init_people_assigned_to_companies()
   test_init_money()
   test_init_spending_rate()
-  # test_basic_one_day()
   # test_basic_30_days()
+  test_people_spending()
+  test_people_spending_when_out_of_business()
   test_rehire()
 
 if __name__ == '__main__':
