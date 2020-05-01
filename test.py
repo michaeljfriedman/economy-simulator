@@ -3,7 +3,7 @@ import sys
 
 def test_init_people_assigned_to_companies():
   print('Check that all people are assigned to a company')
-  people, companies = simulator.init(109, 10, 0, [0, 0])
+  people, companies = simulator.init(109, 10, 0)
   expected = [11] * 9 + [10]
   for p in people:
     present = False
@@ -21,9 +21,9 @@ def test_init_people_assigned_to_companies():
 def test_init_money():
   print('Check that all people and companies start with the right amount of money')
   income = 1200
-  expected_people_money = income / 4
-  expected_company_money = 10 * income / 4
-  people, companies = simulator.init(100, 10, income, [0, 0])
+  expected_people_money = income / simulator.months_per_year
+  expected_company_money = 10 * income / simulator.months_per_year
+  people, companies = simulator.init(100, 10, income)
   for p in people:
     if p.money != expected_people_money:
       print('Failed: person has wrong amount of money')
@@ -40,13 +40,11 @@ def test_init_money():
 
 def test_init_spending_rate():
   print('Check that all people and companies start a valid spending rate')
-  low = 0.75
-  high = 1.25
-  people, companies = simulator.init(100, 10, 0, [low, high])
+  people, companies = simulator.init(100, 10, 0)
   for p in people:
-    if p.spending_rate < 0.75 or p.spending_rate > 1.25:
+    if p.spending_rate < 0 or p.spending_rate > 1:
       print('Failed: person has an invalid spending rate')
-      print('Expected: in range [%.2f, %.2f)' % (low, high))
+      print('Expected: in range [0, 1]')
       print('Actual:   %.2f' % p.spending_rate)
       return
   print('Passed')
@@ -150,8 +148,8 @@ def main():
   test_init_people_assigned_to_companies()
   test_init_money()
   test_init_spending_rate()
-  test_basic_one_day()
-  test_basic_30_days()
+  # test_basic_one_day()
+  # test_basic_30_days()
   test_rehire()
 
 if __name__ == '__main__':
