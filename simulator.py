@@ -17,6 +17,10 @@ class Person:
     self.employed = employed
     self.reset_spending_rate() # the current spending rate this month
 
+  def __str__(self):
+    return ('Person(money=%.2f, income=%.2f, employed=%s)'
+      % (self.money, self.income, str(self.employed)))
+
   def reset_spending_rate(self):
     self.spending_rate = np.random.uniform()
 
@@ -27,6 +31,10 @@ class Company:
     self.money = money
     self.employees = employees
     self.in_business = in_business
+
+  def __str__(self):
+    return ('Company(money=%.2f, in_business=%s employees=%s)'
+      % (self.money, str(self.in_business), str([str(e) for e in self.employees])))
 
 # Initializes the simulator. Returns the list of people and companies
 def init(npersons, ncompanies, income):
@@ -45,6 +53,39 @@ def init(npersons, ncompanies, income):
       companies[i].employees.append(people[len(people)-1-i]) # add one extra
     companies[i].money = np.sum([e.income / months_per_year
       for e in companies[i].employees]) # 1 months' worth of payroll
+  return people, companies
+
+# Given the list of people and companies and the probability of rehiring,
+# companies than can afford to hire unemployed people do so with that
+# probability, giving each person an equally likely chance of being hired
+# by any company. Returns the new list of people and companies.
+def rehire_people(people, companies, rehire_rate):
+  # Hire unemployed people
+  unemployed = np.random.permutation([p for p in people if not p.employed])
+  in_business = [c for c in companies if c.in_business]
+
+  rehire = np.random.rand(len(unemployed)) <= rehire_rate # whether to rehire each person
+  rands = np.random.rand(len(unemployed)) # rand numbers used to select the company that will hire this person
+
+  # Build an array where entry (i, j) is whether company j can afford to hire person i
+  cost_of_new_hire = np.array([p.income / months_per_year for p in unemployed])
+  company_money = np.array([c.money for c in in_business])
+  company_payroll = np.array([np.sum([e.income / months_per_year for e in c.employees]) for c in in_business])
+  can_afford = np.outer(1/cost_of_new_hire, company_money - company_payroll) >= 1
+
+  # Pick the company that will hire each person
+  for i in range(len(unemployed)):
+    if not rehire[i]:
+      continue
+    c_indices = np.argwhere(can_afford[i,:]) # indices of True values
+    if c_indices.shape[0] == 0:
+      continue
+    r = int(rands[i] * c_indices.shape[0])
+    c_index = c_indices[r,0] # random company among the True values
+    c = in_business[c_index]
+    c.employees.append(unemployed[i])
+    unemployed[i].employed = True
+
   return people, companies
 
 # Calculates statistics based on the current state of the model. Returns 3
@@ -111,31 +152,7 @@ def run(
     # At the end of the month, companies hire new employees and pay their
     # employees
     if i % days_per_month == days_per_month - 1:
-      # Hire unemployed people
-      unemployed = np.random.permutation([p for p in people if not p.employed])
-      in_business = [c for c in companies if c.in_business]
-
-      rehire = np.random.rand(len(unemployed)) <= rehire_rate # whether to rehire each person
-      rands = np.random.rand(len(unemployed)) # rand numbers used to select the company that will hire this person
-
-      # Build an array where entry (i, j) is whether company j can afford to hire person i
-      cost_of_new_hire = np.array([p.income / months_per_year for p in unemployed])
-      company_money = np.array([c.money for c in in_business])
-      company_payroll = np.array([np.sum([e.income / months_per_year for e in c.employees]) for c in in_business])
-      can_afford = np.outer(1/cost_of_new_hire, company_money - company_payroll) >= 1
-
-      # Pick the company that will hire each person
-      for i in range(len(unemployed)):
-        if not rehire[i]:
-          continue
-        c_indices = np.argwhere(can_afford[i,:]) # indices of True values
-        if c_indices.shape[0] == 0:
-          continue
-        r = int(rands[i] * c_indices.shape[0])
-        c_index = c_indices[r,0] # random company among the True values
-        c = in_business[c_index]
-        c.employees.append(unemployed[i])
-        unemployed[i].employed = True
+      people, companies = rehire_people(people, companies, rehire_rate)
 
       # Pay employees
       for c in companies:

@@ -116,6 +116,35 @@ def test_basic_30_days():
       return
   print('Passed')
 
+def test_rehire():
+  print('Check that rehiring works (1 person, 1 company that can afford to hire that person)')
+  income = 12
+  people = [simulator.Person(income=income, employed=False)]
+  companies = [simulator.Company(money=income/simulator.months_per_year)]
+
+  p = simulator.Person(income=income, employed=True)
+  expected_people = [p]
+  expected_companies = [simulator.Company(
+    money=income/simulator.months_per_year,
+    employees=[p]
+  )]
+
+  actual_people, actual_companies = simulator.rehire_people(people, companies, 1.0)
+
+  for p_exp, p_act in zip(expected_people, actual_people):
+    if str(p_exp) != str(p_act):
+      print('Failed: person was wrong')
+      print('Expected: %s' % str(p_exp))
+      print('Actual:   %s' % str(p_act))
+      return
+  for c_exp, c_act in zip(expected_companies, actual_companies):
+    if str(c_exp) != str(c_act):
+      print('Failed: company was wrong')
+      print('Expected: %s' % str(c_exp))
+      print('Actual:   %s' % str(c_act))
+      return
+  print('Passed')
+
 # Run all tests
 def main():
   test_init_people_assigned_to_companies()
@@ -123,6 +152,7 @@ def main():
   test_init_spending_rate()
   test_basic_one_day()
   test_basic_30_days()
+  test_rehire()
 
 if __name__ == '__main__':
   main()
