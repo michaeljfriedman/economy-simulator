@@ -101,6 +101,18 @@ def rehire_people(people, companies, rehire_rate):
 
   return people, companies
 
+# Given the list of people and companies, each company pays their employees
+# one month's income. Returns the new list of people and companies.
+def pay_employees(people, companies):
+  for c in companies:
+    if not c.in_business:
+      continue
+    for e in c.employees:
+      amount = e.income / months_per_year
+      c.money -= amount
+      e.money += amount
+  return people, companies
+
 # Calculates statistics based on the current state of the model. Returns 3
 # values:
 # - person_wealth: a list of every percentile of the wealth distribution across
@@ -181,10 +193,7 @@ def run(
             c.in_business = False
             break
 
-        for e in c.employees:
-          amount = e.income / months_per_year
-          c.money -= amount
-          e.money += amount
+      people, companies = pay_employees(people, companies)
 
       # Reset people's spending rates
       for p in people:

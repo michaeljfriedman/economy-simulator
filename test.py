@@ -83,37 +83,67 @@ def test_people_spending_when_out_of_business():
     return
   print('Passed')
 
-def test_basic_30_days():
-  print('Check that the last-day results of a 30 day simulation (1 pay cycle) are correct (1 person, 1 company, income 1200, saving rate 0.25)')
-  results = simulator.run(
-    npersons=1,
-    ncompanies=1,
-    ndays=30,
-    income=1200,
-    spending_range=[0.75, 0.75]
-  )
-  spent = 75
-  person_money = 300 + 100 - spent
-  company_money = 300 - 100 + spent
-  actual = {
-    'person_wealth': results['person_wealth'][30],
-    'company_wealth': results['company_wealth'][30],
-    'unemployment': results['unemployment'][30],
-    'out_of_business': results['out_of_business'][30]
-  }
-  expected = {
-    'person_wealth': [person_money, person_money, person_money, person_money, person_money, person_money, person_money],
-    'company_wealth': [company_money, company_money, company_money, company_money, company_money, company_money, company_money],
-    'unemployment': 0,
-    'out_of_business': 0
-  }
-  for name in expected.keys():
-    if actual[name] != expected[name]:
-      print('Failed: Result %s was wrong' % name)
-      print('Expected: %s' % str(expected[name]))
-      print('Actual:   %s' % str(actual[name]))
-      print(results)
+def test_pay_employees():
+  print('Check that companies paying employees is working (4 people, 2 companies)')
+  npeople = 4
+  p_money = 1
+  p_income = 12
+  c_money = (npeople / 2) * p_income / simulator.months_per_year
+  people = [simulator.Person(money=p_money, income=p_income) for i in range(npeople)]
+  companies = [
+    simulator.Company(money=c_money, employees=people[:int(npeople/2)]),
+    simulator.Company(money=c_money, employees=people[int(npeople/2):])
+  ]
+  people, companies = simulator.pay_employees(people, companies)
+
+  for p in people:
+    expected = p_money + p_income / simulator.months_per_year
+    if p.money != expected:
+      print('Failed: person %s has wrong amount of money' % str(p))
+      print('Expected: %.2f' % expected)
+      print('Actual:   %.2f' % p.money)
       return
+  for c in companies:
+    expected = c_money - (npeople / 2) * (p_income / simulator.months_per_year)
+    if c.money != expected:
+      print('Failed: company %s has wrong amount of money' % str(c))
+      print('Expected: %.2f' % expected)
+      print('Actual:   %.2f' % c.money)
+      return
+  print('Passed')
+
+def test_unemployed_people_are_not_paid():
+  print('Check that unemployed people do not get paid (1 employed person, 1 unemployed person, 1 company)')
+  npeople = 2
+  p_money = 1
+  p_income = 12
+  c_money = npeople * p_income / simulator.months_per_year
+  p1 = simulator.Person(money=p_money, income=p_income)
+  p2 = simulator.Person(money=p_money, income=p_income, employed=False)
+  c = simulator.Company(money=c_money, employees=[p1])
+  people, companies = simulator.pay_employees([p1, p2], [c])
+
+  p1_pay = p_income / simulator.months_per_year
+  p1_money_exp = p_money + p1_pay
+  if p1.money != p1_money_exp:
+    print('Failed: person 1 has wrong amount of money')
+    print('Expected: %.2f' % p1_money_exp)
+    print('Actual:   %.2f' % p1.money)
+    return
+
+  p2_money_exp = p_money
+  if p2.money != p2_money_exp:
+    print('Failed: person 2 has wrong amount of money')
+    print('Expected: %.2f' % p2_money_exp)
+    print('Actual:   %.2f' % p2.money)
+    return
+
+  c_money_exp = c_money - p1_pay
+  if c.money != c_money_exp:
+    print('Failed: company has wrong amount of money')
+    print('Expected: %.2f' % c_money_exp)
+    print('Actual:   %.2f' % c.money)
+    return
   print('Passed')
 
 def test_rehire():
@@ -150,9 +180,10 @@ def main():
   test_init_people_assigned_to_companies()
   test_init_money()
   test_init_spending_rate()
-  # test_basic_30_days()
   test_people_spending()
   test_people_spending_when_out_of_business()
+  test_pay_employees()
+  test_unemployed_people_are_not_paid()
   test_rehire()
 
 if __name__ == '__main__':
