@@ -27,7 +27,7 @@ def test_init_money():
     income[0][1] / simulator.months_per_year
   ]
   expected_company_money = [i*expected_people_money[0] + (npersons-i)*expected_people_money[1]
-    for i in range(npersons)]
+    for i in range(npersons + 1)]
   people, companies = simulator.init(100, npersons, income, [[[0, 1]], [1]])
   for p in people:
     if p.money not in expected_people_money:
