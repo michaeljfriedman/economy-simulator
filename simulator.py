@@ -38,10 +38,12 @@ class Company:
 
 # Initializes the simulator. Returns the list of people and companies
 def init(npersons, ncompanies, income):
+  # Assign each person income from the distribution
+  incomes = np.random.choice(income[0], p=income[1], size=npersons)
   people = [
     Person(
-      money=income/months_per_year, # 1 month income
-      income=income
+      money=incomes[i]/months_per_year, # 1 month income
+      income=incomes[i]
     ) for i in range(npersons)
   ]
   companies = [Company() for i in range(ncompanies)]
@@ -158,7 +160,9 @@ def calculate_stats(people, companies):
 # - npersons (int): the number of people in the model
 # - ncompanies (int): the number of companies in the model
 # - ndays (int): the number of days to run for
-# - income (int): annual income to apply to all people
+# - income (2d array of floats): the distribution of people's annual income.
+#   Specified as two parallel arrays: the first lists the income amounts, and
+#   the second lists the probability of each amount being chosen for a person.
 # - rehire_rate (float): the probability of an unemployed person being rehired
 #   when an opportunity arises
 #
@@ -173,7 +177,7 @@ def run(
   npersons=0,
   ncompanies=0,
   ndays=0,
-  income=65000,
+  income=[[65000], [1.0]],
   rehire_rate=1.0
   ):
 

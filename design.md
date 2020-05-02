@@ -69,6 +69,12 @@ Simulation:
 - Add: each month, unemployed people are rehired if a company can afford them,
   and are distributed evenly among companies.
 
+## Version 3: Adds variable income
+
+Income is specified as a distribution - for instance, 25% of people make
+25k, 25% make 65k, 25% make 100k and 25% make 250k. This generalizes the
+constant income case that's currently implemented.
+
 ## Config format
 
 The config is a JSON object with the parameters:
@@ -77,9 +83,11 @@ The config is a JSON object with the parameters:
 - `ncompanies` (int): the number of companies in the model
 - `ndays` (int): how many days to run the simulation for (note there are 30 days
   in each month in this model)
-- `income` (int): annual income of each person in the model. An employed person
-  receives an equal amount of this each month (there are 12 months in each year
-  in this model)
+- `income` (2d array of floats): the distribution of people's annual income.
+  Specified as two parallel arrays - the first lists the income amounts, and the
+  second lists the probability of each amount being chosen for a person. An
+  employed person receives an equal fraction of their income this each month
+  (12 months in each year).
 - `rehire_rate` (float): the probability that an unemployed is rehired when
   an opportunity arises.
 
@@ -90,7 +98,10 @@ Example:
   "npersons": 10000,
   "ncompanies": 100,
   "ndays": 360,
-  "income": 65000,
+  "income": [
+    [25000, 65000, 100000, 250000],
+    [0.25, 0.25, 0.25, 0.25]
+  ],
   "rehire_rate": 1.0
 }
 ```
