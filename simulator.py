@@ -101,6 +101,28 @@ def rehire_people(people, companies, rehire_rate):
 
   return people, companies
 
+# Given the list of people and companies, companies lay off employees until
+# they can afford to pay all of them. Returns the new list of people and
+# companies.
+def layoff_employees(people, companies):
+  for c in companies:
+    if not c.in_business:
+      continue
+    layoff_order = np.random.permutation(c.employees)
+    l = 0 # index of next employee to lay off
+    while True:
+      total_amount = np.sum([e.income / months_per_year for e in c.employees])
+      if total_amount <= c.money:
+        break
+      layoff = layoff_order[l]
+      l += 1
+      c.employees.remove(layoff)
+      layoff.employed = False
+      if len(c.employees) == 0:
+        c.in_business = False
+        break
+  return people, companies
+
 # Given the list of people and companies, each company pays their employees
 # one month's income. Returns the new list of people and companies.
 def pay_employees(people, companies):
@@ -173,26 +195,10 @@ def run(
     if i % days_per_month == days_per_month - 1:
       people, companies = rehire_people(people, companies, rehire_rate)
 
+      # Company lays off employees until it can afford payroll
+      people, companies = layoff_employees(people, companies)
+
       # Pay employees
-      for c in companies:
-        if not c.in_business:
-          continue
-
-        # Company lays off employees until it can afford payroll
-        layoff_order = np.random.permutation(c.employees)
-        l = 0 # index of next employee to lay off
-        while True:
-          total_amount = np.sum([e.income / months_per_year for e in c.employees])
-          if total_amount <= c.money:
-            break
-          layoff = layoff_order[l]
-          l += 1
-          c.employees.remove(layoff)
-          layoff.employed = False
-          if len(c.employees) == 0:
-            c.in_business = False
-            break
-
       people, companies = pay_employees(people, companies)
 
       # Reset people's spending rates

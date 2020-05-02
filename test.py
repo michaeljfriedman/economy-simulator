@@ -122,6 +122,8 @@ def test_unemployed_people_are_not_paid():
   p2 = simulator.Person(money=p_money, income=p_income, employed=False)
   c = simulator.Company(money=c_money, employees=[p1])
   people, companies = simulator.pay_employees([p1, p2], [c])
+  p1, p2 = people
+  c = companies[0]
 
   p1_pay = p_income / simulator.months_per_year
   p1_money_exp = p_money + p1_pay
@@ -143,6 +145,72 @@ def test_unemployed_people_are_not_paid():
     print('Failed: company has wrong amount of money')
     print('Expected: %.2f' % c_money_exp)
     print('Actual:   %.2f' % c.money)
+    return
+  print('Passed')
+
+def test_layoff():
+  print("Check that company lays off 1 employee when it can't afford them anymore (2 people, 1 company)")
+  npeople = 2
+  p_income = 12
+  c_money = (npeople / 2) * p_income / simulator.months_per_year # only enough for 1 person
+  people = [simulator.Person(income=p_income) for i in range(npeople)]
+  companies = [simulator.Company(money=c_money, employees=[p for p in people])]
+
+  people, companies = simulator.layoff_employees(people, companies)
+  unemployed = 0 if not people[0].employed else 1
+  employed = int(not unemployed)
+  c = companies[0]
+
+  if people[unemployed].employed:
+    print('Failed: both people were still employed')
+    print('Expected: One person should be unemployed, and the other should be employed')
+    print('Actual: people=%s' % ([str(p) for p in people]))
+    return
+  if not people[employed].employed:
+    print('Failed: both people were laid off')
+    print('Expected: One person should be unemployed, and the other should be employed')
+    print('Actual: people=%s' % ([str(p) for p in people]))
+    return
+  if len(c.employees) != 1:
+    print('Failed: company has the wrong number of employees')
+    print('Expected: len(c.employees) = 1')
+    print('Actual:   len(c.employees) = %d' % len(c.employees))
+    return
+  if c.employees[0] != people[employed]:
+    print('Failed: company has the wrong person listed as its employee')
+    print('Expected: company employee should be people[%d]=%s' % (employed, str(people[employed])))
+    print('Actual:   company employee is people[%d]=%s' % (unemployed, str(people[unemployed])))
+    return
+  if not c.in_business:
+    print('Failed: company is marked out of business even though it still has 1 employee')
+    print('Expected: c.in_business = True')
+    print('Actual:   c.in_business = %s' % str(c.in_business))
+  print('Passed')
+
+def test_company_goes_out_of_business():
+  print('Check that a company goes out of business when it lays off all of its employees (1 person, 1 company)')
+  p_income = 12
+  c_money = 0.5 * p_income / simulator.months_per_year # half the amount it needs
+  p = simulator.Person(income=p_income)
+  c = simulator.Company(money=c_money, employees=[p])
+  people, companies = simulator.layoff_employees([p], [c])
+
+  p = people[0]
+  c = companies[0]
+  if p.employed:
+    print('Failed: person is still marked as employed')
+    print('Expected: p.employed = False')
+    print('Actual:   p.employed = %s' % str(p.employed))
+    return
+  if len(c.employees) != 0:
+    print('Failed: company still has employees')
+    print('Expected: len(c.employees) = 0')
+    print('Actual:   len(c.employees) = %d' % len(c.employees))
+    return
+  if c.in_business:
+    print('Failed: company is still marked as in-business')
+    print('Expected: c.in_business = False')
+    print('Actual:   c.in_business = %s' % str(c.in_business))
     return
   print('Passed')
 
@@ -184,6 +252,8 @@ def main():
   test_people_spending_when_out_of_business()
   test_pay_employees()
   test_unemployed_people_are_not_paid()
+  test_layoff()
+  test_company_goes_out_of_business()
   test_rehire()
 
 if __name__ == '__main__':
