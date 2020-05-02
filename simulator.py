@@ -11,18 +11,15 @@ days_per_month = 30
 # A person in the model
 class Person:
 
-  def __init__(self, money=0, income=0, employed=True):
+  def __init__(self, money=0, income=0, employed=True, spending_rate=0):
     self.money = money
     self.income = income
     self.employed = employed
-    self.reset_spending_rate() # the current spending rate this month
+    self.spending_rate = spending_rate
 
   def __str__(self):
     return ('Person(money=%.2f, income=%.2f, employed=%s)'
       % (self.money, self.income, str(self.employed)))
-
-  def reset_spending_rate(self):
-    self.spending_rate = np.random.uniform()
 
 # A company in the model
 class Company:
@@ -36,8 +33,23 @@ class Company:
     return ('Company(money=%.2f, in_business=%s employees=%s)'
       % (self.money, str(self.in_business), str([str(e) for e in self.employees])))
 
+# Picks a new spending rate for each person from the spending distribution.
+# Returns the new list of people.
+def reset_spending_rates(people, spending_dist):
+  rands = np.random.rand(len(people)) # random numbers used to pick a spending rate for each person
+  ranges, probs = spending_dist
+  ranges = [None] + ranges # add a dummy value
+  probs = list(np.cumsum([0] + probs)) # convert to cumulative sum, which gives us ranges for rands
+  for i in range(len(people)):
+    for j in range(1, len(probs)):
+      if probs[j-1] <= rands[i] < probs[j]:
+        # Pick a value uniformly in the corresponding range
+        lo, hi = ranges[j]
+        people[i].spending_rate = lo + rands[i] * (hi - lo)
+  return people
+
 # Initializes the simulator. Returns the list of people and companies
-def init(npersons, ncompanies, income):
+def init(npersons, ncompanies, income, spending_dist):
   # Assign each person income from the distribution
   incomes = np.random.choice(income[0], p=income[1], size=npersons)
   people = [
@@ -46,6 +58,8 @@ def init(npersons, ncompanies, income):
       income=incomes[i]
     ) for i in range(npersons)
   ]
+  people = reset_spending_rates(people, spending_dist)
+
   companies = [Company() for i in range(ncompanies)]
   people_per_company = int(npersons / ncompanies)
   extra = npersons % ncompanies
@@ -160,9 +174,12 @@ def calculate_stats(people, companies):
 # - npersons (int): the number of people in the model
 # - ncompanies (int): the number of companies in the model
 # - ndays (int): the number of days to run for
-# - income (2d array of floats): the distribution of people's annual income.
+# - income (2d list of floats): the distribution of people's annual income.
 #   Specified as two parallel arrays: the first lists the income amounts, and
 #   the second lists the probability of each amount being chosen for a person.
+# - spending (2d list of floats): the distribution of people's spending rates.
+#   Analogous to income, but the first list consists of [low, high] pairs
+#   representing the range of rates to choose from.
 # - rehire_rate (float): the probability of an unemployed person being rehired
 #   when an opportunity arises
 #
@@ -178,11 +195,12 @@ def run(
   ncompanies=0,
   ndays=0,
   income=[[65000], [1.0]],
+  spending=[[[0, 1]], [1]],
   rehire_rate=1.0
   ):
 
   # Set up simulation
-  people, companies = init(npersons, ncompanies, income)
+  people, companies = init(npersons, ncompanies, income, spending)
 
   # Run simluation
   pw, cw, u, oob = calculate_stats(people, companies)
@@ -206,8 +224,7 @@ def run(
       people, companies = pay_employees(people, companies)
 
       # Reset people's spending rates
-      for p in people:
-        p.reset_spending_rate()
+      people = reset_spending_rates(people, spending)
 
     # Calculate stats
     pw, cw, u, oob = calculate_stats(people, companies)

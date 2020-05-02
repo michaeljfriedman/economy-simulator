@@ -77,17 +77,35 @@ constant income case that's currently implemented.
 
 ## Config format
 
-The config is a JSON object with the parameters:
+The config is a JSON object with the following parameters. Distributions are
+specified as 2 parallel arrays in a 2d array: the first lists the values, and
+the second lists the probability that each value is selected.
 
 - `npersons` (int): the number of people in the model
 - `ncompanies` (int): the number of companies in the model
 - `ndays` (int): how many days to run the simulation for (note there are 30 days
   in each month in this model)
-- `income` (2d array of floats): the distribution of people's annual income.
-  Specified as two parallel arrays - the first lists the income amounts, and the
-  second lists the probability of each amount being chosen for a person. An
+- `income` (distribution): the distribution of people's annual income. An
   employed person receives an equal fraction of their income this each month
   (12 months in each year).
+- `spending` (distribution): the distribution of people's spending rates. A
+  person picks a spending rate (a fraction of their money) from this
+  distribution each month, and spends that much that month. This one is treated
+  slightly differently. Each value in the first array should be a pair
+  [low, high] indicating the range of rates a person can choose from. People
+  pick a *range* according to the distribution, and then choose a value
+  uniformly within that range. So in the example below, people have a 50%
+  chance of choosing a rate in [0, 0.25], and 50% chance in [0.25, 1] (i.e.
+  a skewed distribution that gives people a tendency to spend more than save).
+  As another example, a uniform distribution over [0, 1] would be represented as:
+
+  ```json
+  [
+    [[0, 1]],
+    [1]
+  ]
+  ```
+
 - `rehire_rate` (float): the probability that an unemployed is rehired when
   an opportunity arises.
 
@@ -101,6 +119,10 @@ Example:
   "income": [
     [25000, 65000, 100000, 250000],
     [0.25, 0.25, 0.25, 0.25]
+  ],
+  "spending": [
+    [[0, 0.25], [0.25, 1]],
+    [0.5, 0.5]
   ],
   "rehire_rate": 1.0
 }

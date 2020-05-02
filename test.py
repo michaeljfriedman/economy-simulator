@@ -3,7 +3,7 @@ import sys
 
 def test_init_people_assigned_to_companies():
   print('Check that all people are assigned to a company')
-  people, companies = simulator.init(109, 10, [[0], [1]])
+  people, companies = simulator.init(109, 10, [[0], [1]], [[[0, 1]], [1]])
   expected = [11] * 9 + [10]
   for p in people:
     present = False
@@ -28,7 +28,7 @@ def test_init_money():
   ]
   expected_company_money = [i*expected_people_money[0] + (npersons-i)*expected_people_money[1]
     for i in range(npersons)]
-  people, companies = simulator.init(100, npersons, income)
+  people, companies = simulator.init(100, npersons, income, [[[0, 1]], [1]])
   for p in people:
     if p.money not in expected_people_money:
       print('Failed: person has wrong amount of money')
@@ -49,9 +49,9 @@ def test_init_income_distribution():
   low_income = 100
   high_income = 200
   p = 0.5
-  tolerance = 0.02
+  tolerance = 0.04
   income = [[low_income, high_income], [p, p]]
-  people, _ = simulator.init(npersons, 1, income)
+  people, _ = simulator.init(npersons, 1, income, [[[0, 1]], [1]])
   npeople_low = len([p for p in people if p.income == low_income])
   npeople_high = len([p for p in people if p.income == high_income])
   low_range = npersons * (p - tolerance)
@@ -63,31 +63,47 @@ def test_init_income_distribution():
     return
   print('Passed')
 
-def test_init_spending_rate():
-  print('Check that all people and companies start a valid spending rate')
-  people, companies = simulator.init(100, 10, [[0], [1]])
-  for p in people:
-    if p.spending_rate < 0 or p.spending_rate > 1:
-      print('Failed: person has an invalid spending rate')
-      print('Expected: in range [0, 1]')
-      print('Actual:   %.2f' % p.spending_rate)
-      return
+def test_init_spending_distribution():
+  print('Check that spending rates are allocated according to the distribution')
+  npeople = 1000
+  range1 = [0, 0.25]
+  range2 = [0.25, 1]
+  p = 0.5
+  spending_dist = [
+    [range1, range2],
+    [p, p]
+  ]
+  tolerance = 0.04
+  people, _ = simulator.init(npeople, 10, [[0], [1]], spending_dist)
+  npeople_range1 = len([p for p in people if range1[0] <= p.spending_rate < range1[1]])
+  npeople_range2 = len([p for p in people if range2[0] <= p.spending_rate < range2[1]])
+  low_npeople = npeople * (p - tolerance)
+  high_npeople = npeople * (p + tolerance)
+  if not (low_npeople <= npeople_range1 <= high_npeople and low_npeople <= npeople_range2 <= high_npeople):
+    print('Failed: spending rate distribution is off')
+    print('Expected: npeople in each category in [%d, %d]' % (int(low_npeople), int(high_npeople)))
+    print('Actual:   npeople_range1=%d, npeople_range2=%d' % (npeople_range1, npeople_range2))
+    return
   print('Passed')
 
 def test_people_spending():
   print('Check that people spend a valid amount to companies (1 person, 2 companies)')
   p_money = 100
   c_money = 0
-  p = simulator.Person(money=p_money)
+  spending_rate = 0.5
+  p = simulator.Person(money=p_money, spending_rate=spending_rate)
   c1 = simulator.Company(money=c_money)
   c2 = simulator.Company(money=c_money)
   people, companies = simulator.spend([p], [c1, c2])
 
-  if not (people[0].money < p_money and (companies[0].money > c_money
-    or companies[1].money > c_money)):
+  spent = spending_rate * p_money / simulator.days_per_month
+  p_money_exp = p_money - spent
+  c_money_exp = c_money + spent
+  if not (people[0].money == p_money_exp and (companies[0].money == c_money_exp
+    or companies[1].money == c_money_exp)):
     print('Failed: money was not spent correctly')
-    print('Expected: p.money > %.2f, c1.money or c2.money > %.2f' % (p_money, c_money))
-    print('Actual:   p.money = %.2f, c1.money = %.2f, c2.money = %.2f' (
+    print('Expected: p.money = %.2f, c1.money or c2.money = %.2f' % (p_money_exp, c_money_exp))
+    print('Actual:   p.money = %.2f, c1.money = %.2f, c2.money = %.2f' % (
       people[0].money, companies[0].money, companies[1].money
     ))
     return
@@ -272,7 +288,7 @@ def test_rehire():
 def main():
   test_init_people_assigned_to_companies()
   test_init_money()
-  test_init_spending_rate()
+  test_init_spending_distribution()
   test_init_income_distribution()
   test_people_spending()
   test_people_spending_when_out_of_business()
