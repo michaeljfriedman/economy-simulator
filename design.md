@@ -81,7 +81,6 @@ The config is a JSON object with the following parameters. Distributions are
 specified as 2 parallel arrays in a 2d array: the first lists the values, and
 the second lists the probability that each value is selected.
 
-- `npersons` (int): the number of people in the model
 - `ncompanies` (int): the number of companies in the model
 - `ndays` (int): how many days to run the simulation for (note there are 30 days
   in each month in this model)
@@ -109,6 +108,9 @@ the second lists the probability that each value is selected.
 - `initial_money` (distribution): the distribution of initial money. Specifies
   the number of months' worth of money people and companies start with. For
   people, it's X months' income; for companies, it's X months' payroll.
+- `employees` (distribution): the distribution of the number of employees
+  assigned to companies. For example, in the the config below, each company has
+  a 50% chance of being assigned 10 employees, and a 50% chance of 20.
 - `rehire_rate` (float): the probability that an unemployed is rehired when
   an opportunity arises.
 
@@ -116,7 +118,6 @@ Example:
 
 ```json
 {
-  "npersons": 10000,
   "ncompanies": 100,
   "ndays": 360,
   "income": [
@@ -129,6 +130,10 @@ Example:
   ],
   "initial_money": [
     [1, 2],
+    [0.5, 0.5]
+  ],
+  "employees": [
+    [10, 20],
     [0.5, 0.5]
   ],
   "rehire_rate": 1.0

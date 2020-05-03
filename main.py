@@ -31,12 +31,12 @@ def main(argv):
 
   # Run simulator
   results = simulator.run(
-    npersons=config['npersons'],
     ncompanies=config['ncompanies'],
     ndays=config['ndays'],
     income=config['income'],
     spending=config['spending'],
     initial_money=config['initial_money'],
+    employees=config['employees'],
     rehire_rate=config['rehire_rate']
   )
 
