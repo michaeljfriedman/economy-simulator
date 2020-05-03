@@ -26,33 +26,39 @@ defaults = {
   'employees': [
     [10],
     [1]
+  ],
+  'industry_selection': [
+    ['economy'],
+    [1]
   ]
 }
 
 # A person in the model
 class Person:
 
-  def __init__(self, money=0, income=0, employed=True, spending_rate=0):
+  def __init__(self, money=0, income=0, employed=True, spending_rate=0, industry='economy'):
     self.money = money
     self.income = income
     self.employed = employed
     self.spending_rate = spending_rate
+    self.industry = industry
 
   def __str__(self):
-    return ('Person(money=%.2f, income=%.2f, employed=%s)'
-      % (self.money, self.income, str(self.employed)))
+    return ('Person(money=%.2f, income=%.2f, employed=%s, industry="%s")'
+      % (self.money, self.income, str(self.employed), self.industry))
 
 # A company in the model
 class Company:
 
-  def __init__(self, money=0, employees=[], in_business=True):
+  def __init__(self, money=0, employees=[], in_business=True, industry='economy'):
     self.money = money
     self.employees = employees
     self.in_business = in_business
+    self.industry = industry
 
   def __str__(self):
-    return ('Company(money=%.2f, in_business=%s employees=%s)'
-      % (self.money, str(self.in_business), str([str(e) for e in self.employees])))
+    return ('Company(money=%.2f, in_business=%s, industry="%s", employees=%s)'
+      % (self.money, str(self.in_business), self.industry, str([str(e) for e in self.employees])))
 
 # Picks a new spending rate for each person from the spending distribution.
 # Returns the new list of people.
@@ -75,15 +81,16 @@ def init(
   income=defaults['income'],
   spending=defaults['spending'],
   initial_money=defaults['initial_money'],
-  employees=defaults['employees']
+  employees=defaults['employees'],
+  industries=defaults['industry_selection'][0]
   ):
 
   # Assign people to companies
   people = []
-  companies = [Company() for i in range(ncompanies)]
+  companies = [Company(industry=industries[i % len(industries)]) for i in range(ncompanies)]
   nemployees = np.random.choice(employees[0], p=employees[1], size=len(companies))
   for i in range(ncompanies):
-    companies[i].employees = [Person() for j in range(nemployees[i])]
+    companies[i].employees = [Person(industry=companies[i].industry) for j in range(nemployees[i])]
     people += companies[i].employees
 
   # Assign each person income, initial money, and spending rates
@@ -101,14 +108,18 @@ def init(
     companies[i].money = company_months[i] * payroll
   return people, companies
 
-# Given the list of people and companies, each person spends a portion of their
-# monthly spending money at a random company. Returns the new list of people
+# Given the list of people and companies, each person picks a random company
+# within an industry chosen from the industry distribution, and spends a portion
+# of their monthly spending at that company. Returns the new list of people
 # and companies.
-def spend(people, companies):
+def spend(people, companies, industry_selection):
   in_business = [c for c in companies if c.in_business]
   if len(in_business) != 0:
-    random_companies = np.random.choice(in_business, len(people))
-    for p, c in zip(people, random_companies):
+    industries = np.random.choice(industry_selection[0], p=industry_selection[1], size=len(people))
+    rands = np.random.rand(len(people)) # random numbers used to pick a company for each person
+    for p, ind, r in zip(people, industries, rands):
+      ind_companies = [c for c in in_business if c.industry == ind]
+      c = ind_companies[int(r * len(ind_companies))]
       amount = p.spending_rate * p.money / days_per_month
       p.money -= amount
       c.money += amount
@@ -144,6 +155,7 @@ def rehire_people(people, companies, rehire_rate):
     c = in_business[c_index]
     c.employees.append(unemployed[i])
     unemployed[i].employed = True
+    unemployed[i].industry = c.industry
 
   return people, companies
 
@@ -181,24 +193,22 @@ def pay_employees(people, companies):
       e.money += amount
   return people, companies
 
-# Calculates statistics based on the current state of the model. Returns 3
-# values:
-# - person_wealth: a list of every percentile of the wealth distribution across
-#   people
-# - company_wealth: an analogous list for companies
-# - unemployment: the current unemployment rate
-# - out_of_business: the current fraction of companies out of business
-def calculate_stats(people, companies):
-  person_wealth_data = [p.money for p in people]
-  company_wealth_data = [c.money for c in companies]
-
-  percentiles = range(0, 101)
-  person_wealth = list(np.percentile(person_wealth_data, percentiles))
-  company_wealth = list(np.percentile(company_wealth_data, percentiles))
-
-  unemployment = np.sum([1 for p in people if not p.employed]) / len(people)
-  out_of_business = np.sum([1 for c in companies if not c.in_business]) / len(companies)
-  return person_wealth, company_wealth, unemployment, out_of_business
+# Calculates statistics based on the current state of the model and adds them
+# to the given results. Returns the new results.
+def calculate_stats(results, people, companies):
+  for ind, ind_results in results.items():
+    ind_people = [p for p in people if p.industry == ind]
+    ind_companies = [c for c in companies if c.industry == ind]
+    percentiles = range(0, 101)
+    new_results = {
+      'person_wealth': list(np.percentile([p.money for p in ind_people], percentiles)),
+      'company_wealth': list(np.percentile([c.money for c in ind_companies], percentiles)),
+      'unemployment': len([p for p in ind_people if not p.employed]) / len(ind_people),
+      'out_of_business': len([c for c in ind_companies if not c.in_business]) / len(ind_companies)
+    }
+    for k in ind_results.keys():
+      ind_results[k].append(new_results[k])
+  return results
 
 # Runs the simulator, given parameters:
 # - ncompanies (int): the number of companies in the model
@@ -216,14 +226,20 @@ def calculate_stats(people, companies):
 #   companies start with.
 # - employees (2d list of floats): the distribution of employees assigned to
 #   companies. Lists the possible number of employees a company will start with.
+# - industry_selection (2d list of strings and floats): the distribution of
+#   how likely a person is to spend in each industry. Lists the industries by
+#   name, and the probabilities associated with each.
 #
-# Returns a dict of results:
+# Returns a dict of results. Each key is an industry name from
+# industry_selection, and each value is a dict of:
 # - person_wealth: a list of stats, one for each day, where each day is a list
-#   of every percentile of the wealth distribution across people
+#   of every percentile of the wealth distribution across people in that
+#   industry.
 # - company_wealth: an analogous list for company wealth
-# - unemployment: a list of unemployment rates, one for each day
+# - unemployment: a list of unemployment rates in that industry, one for each
+#   day
 # - out_of_business: a list of out-of-business rates (fraction of companies
-#   out of business), one for each day
+#   in that industry that are out of business), one for each day
 def run(
   ncompanies=defaults['ncompanies'],
   ndays=defaults['ndays'],
@@ -231,21 +247,30 @@ def run(
   income=defaults['income'],
   spending=defaults['spending'],
   initial_money=defaults['initial_money'],
-  employees=defaults['employees']
+  employees=defaults['employees'],
+  industry_selection=defaults["industry_selection"]
   ):
 
   # Set up simulation
-  people, companies = init(ncompanies, income, spending, initial_money, employees)
+  people, companies = init(
+    ncompanies=ncompanies,
+    income=income,
+    spending=spending,
+    initial_money=initial_money,
+    employees=employees,
+    industries=industry_selection[0]
+  )
 
   # Run simluation
-  pw, cw, u, oob = calculate_stats(people, companies)
-  person_wealth = [pw]
-  company_wealth = [cw]
-  unemployment = [u]
-  out_of_business = [oob]
+  results = {
+    industry: {
+      'person_wealth': [], 'company_wealth': [], 'unemployment': [], 'out_of_business': []
+    } for industry in industry_selection[0]
+  }
+  results = calculate_stats(results, people, companies)
   for i in tqdm(range(ndays)):
     # Each person spends at a random company
-    people, companies = spend(people, companies)
+    people, companies = spend(people, companies, industry_selection)
 
     # At the end of the month, companies hire new employees and pay their
     # employees
@@ -262,15 +287,6 @@ def run(
       people = reset_spending_rates(people, spending)
 
     # Calculate stats
-    pw, cw, u, oob = calculate_stats(people, companies)
-    person_wealth.append(pw)
-    company_wealth.append(cw)
-    unemployment.append(u)
-    out_of_business.append(oob)
+    results = calculate_stats(results, people, companies)
 
-  return {
-    'person_wealth': person_wealth,
-    'company_wealth': company_wealth,
-    'unemployment': unemployment,
-    'out_of_business': out_of_business
-  }
+  return results

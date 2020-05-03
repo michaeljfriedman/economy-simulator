@@ -122,15 +122,39 @@ def test_init_spending_distribution():
     return
   print('Passed')
 
-def test_people_spending():
+def test_init_industries():
+  print('Check that industries are assigned correctly')
+  ind1 = 'industry 1'
+  ind2 = 'industry 2'
+  people, companies = simulator.init(industries=[ind1, ind2])
+
+  n1 = len([c for c in companies if c.industry == ind1])
+  n2 = len([c for c in companies if c.industry == ind2])
+  if n1 != n2:
+    print('Failed: wrong number of companies in each industry')
+    print('Expected: n1=%d, n2=%d' % (len(companies)/2, len(companies)/2))
+    print('Actual:   n1=%d, n2=%d' % (n1, n2))
+    return
+
+  for c in companies:
+    for e in c.employees:
+      if e.industry != c.industry:
+        print('Failed: person is not assigned the industry of their company')
+        print('Expected: c.industry=%s, p.industry=%s' % (c.industry, c.industry))
+        print('Actual:   c.industry=%s, p.industry=%s' % (c.industry, p.industry))
+        return
+  print('Passed')
+
+def test_people_spending1():
   print('Check that people spend a valid amount to companies (1 person, 2 companies)')
   p_money = 100
   c_money = 0
+  ind = 'industry'
   spending_rate = 0.5
   p = simulator.Person(money=p_money, spending_rate=spending_rate)
-  c1 = simulator.Company(money=c_money)
-  c2 = simulator.Company(money=c_money)
-  people, companies = simulator.spend([p], [c1, c2])
+  c1 = simulator.Company(money=c_money, industry=ind)
+  c2 = simulator.Company(money=c_money, industry=ind)
+  people, companies = simulator.spend([p], [c1, c2], [[ind], [1]])
 
   spent = spending_rate * p_money / simulator.days_per_month
   p_money_exp = p_money - spent
@@ -145,13 +169,57 @@ def test_people_spending():
     return
   print('Passed')
 
+def test_people_spending2():
+  print('Check that people spend a valid amount to companies, with > 1 industry (100 people, 2 companies in diff industries)')
+  p_money = 100
+  c_money = 0
+  ind1 = 'industry 1'
+  ind2 = 'industry 2'
+  spending_rate = 0.5
+  p = 0.75
+  people = [simulator.Person(money=p_money, spending_rate=spending_rate) for i in range(100)]
+  companies = [
+    simulator.Company(money=c_money, industry=ind1),
+    simulator.Company(money=c_money, industry=ind2)
+  ]
+  people, companies = simulator.spend(people, companies, [[ind1, ind2], [p, 1-p]])
+
+  # Check that people's money is correct
+  spent = spending_rate * p_money / simulator.days_per_month
+  p_money_exp = p_money - spent
+  for person in people:
+    if person.money != p_money_exp:
+      print('Failed: person spent wrong amount of money')
+      print('Expected: p.money=%.2f' % p_money_exp)
+      print('Actual:   p.money=%.2f' % p.money)
+      return
+
+  # Check that companies' money matches the expected distribution
+  tolerance = 0.1
+  c_money_exp = [
+    {'lower_bound': c_money + (p - tolerance) * len(people) * spent,
+     'upper_bound': c_money + (p + tolerance) * len(people) * spent},
+    {'lower_bound': c_money + (1 - p - tolerance) * len(people) * spent,
+     'upper_bound': c_money + (1 - p + tolerance) * len(people) * spent}
+  ]
+  for i in range(len(companies)):
+    lower_bound = c_money_exp[i]['lower_bound']
+    upper_bound = c_money_exp[i]['upper_bound']
+    if not (lower_bound <= companies[i].money <= upper_bound):
+      print('Failed: company money does not match the distribution')
+      print('Expected: company %d money should be in range [%.2f, %.2f]' % (i, lower_bound, upper_bound))
+      print('Actual:   company money = %.2f' % companies[i].money)
+      return
+  print('Passed')
+
 def test_people_spending_when_out_of_business():
   print("Check that people don't spend to an out of business company (1 person, 1 company)")
   p_money = 100
   c_money = 0
+  ind = 'industry'
   p = simulator.Person(money=p_money)
-  c = simulator.Company(money=c_money, in_business=False)
-  people, companies = simulator.spend([p], [c])
+  c = simulator.Company(money=c_money, in_business=False, industry=ind)
+  people, companies = simulator.spend([p], [c], [[ind], [1]])
 
   if people[0].money != 100 or companies[0].money != 0:
     print("Failed: someone's money changed")
@@ -294,14 +362,17 @@ def test_company_goes_out_of_business():
 def test_rehire():
   print('Check that rehiring works (1 person, 1 company that can afford to hire that person)')
   income = 12
-  people = [simulator.Person(income=income, employed=False)]
-  companies = [simulator.Company(money=income/simulator.months_per_year)]
+  old_ind = 'old industry'
+  new_ind = 'new industry'
+  people = [simulator.Person(income=income, employed=False, industry=old_ind)]
+  companies = [simulator.Company(money=income/simulator.months_per_year, industry=new_ind)]
 
-  p = simulator.Person(income=income, employed=True)
-  expected_people = [p]
+  p_exp = simulator.Person(income=income, employed=True, industry=new_ind)
+  expected_people = [p_exp]
   expected_companies = [simulator.Company(
     money=income/simulator.months_per_year,
-    employees=[p]
+    employees=[p_exp],
+    industry=new_ind
   )]
 
   actual_people, actual_companies = simulator.rehire_people(people, companies, 1.0)
@@ -326,7 +397,9 @@ def main():
   test_init_money_distribution()
   test_init_income_distribution()
   test_init_spending_distribution()
-  test_people_spending()
+  test_init_industries()
+  test_people_spending1()
+  test_people_spending2()
   test_people_spending_when_out_of_business()
   test_pay_employees()
   test_unemployed_people_are_not_paid()
