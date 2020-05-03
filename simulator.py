@@ -27,7 +27,7 @@ defaults = {
     [10],
     [1]
   ],
-  'industry_selection': [
+  'industries': [
     ['economy'],
     [1]
   ]
@@ -78,7 +78,7 @@ def init(
   spending=defaults['spending'],
   initial_money=defaults['initial_money'],
   employees=defaults['employees'],
-  industries=defaults['industry_selection'][0]
+  industries=defaults['industries'][0]
   ):
 
   # Assign people to companies
@@ -108,14 +108,14 @@ def init(
 # company within an industry chosen from the industry distribution, and spends a
 # portion of their monthly spending at that company. Returns the new list of
 # people and companies.
-# - industries: a dict {industry: [list of companies in business in that industry]}
-def spend(people, companies, industries, industry_selection):
+# - ind_companies: a dict {industry: [list of companies in business in that industry]}
+def spend(people, companies, industries, ind_companies):
   in_business = [c for c in companies if c.in_business]
   if len(in_business) != 0:
-    rand_inds = np.random.choice(industry_selection[0], p=industry_selection[1], size=len(people))
+    rand_inds = np.random.choice(industries[0], p=industries[1], size=len(people))
     rands = np.random.rand(len(people)) # random numbers used to pick a company for each person
     for p, rand_ind, r in zip(people, rand_inds, rands):
-      ind = industries[rand_ind]
+      ind = ind_companies[rand_ind]
       c = ind[int(r * len(ind))]
       amount = p.spending_rate * p.money / days_per_month
       p.money -= amount
@@ -229,12 +229,12 @@ def calculate_stats(results, people, companies):
 #   companies start with.
 # - employees (2d list of floats): the distribution of employees assigned to
 #   companies. Lists the possible number of employees a company will start with.
-# - industry_selection (2d list of strings and floats): the distribution of
+# - industries (2d list of strings and floats): the distribution of
 #   how likely a person is to spend in each industry. Lists the industries by
 #   name, and the probabilities associated with each.
 #
 # Returns a dict of results. Each key is an industry name from
-# industry_selection, and each value is a dict of:
+# industries, and each value is a dict of:
 # - person_wealth: a list of stats, one for each day, where each day is a list
 #   of every percentile of the wealth distribution across people in that
 #   industry.
@@ -251,7 +251,7 @@ def run(
   spending=defaults['spending'],
   initial_money=defaults['initial_money'],
   employees=defaults['employees'],
-  industry_selection=defaults["industry_selection"]
+  industries=defaults["industries"]
   ):
 
   # Set up simulation
@@ -261,23 +261,23 @@ def run(
     spending=spending,
     initial_money=initial_money,
     employees=employees,
-    industries=industry_selection[0]
+    industries=industries[0]
   )
 
   # Run simluation
   results = {
     industry: {
       'person_wealth': [], 'company_wealth': [], 'unemployment': [], 'out_of_business': []
-    } for industry in industry_selection[0]
+    } for industry in industries[0]
   }
   results = calculate_stats(results, people, companies)
   for i in tqdm(range(ndays)):
     # Each person spends at a random company
-    industries = {
+    ind_companies = {
       ind: [c for c in companies if c.in_business and c.industry == ind]
-      for ind in industry_selection[0]
+      for ind in industries[0]
     }
-    people, companies = spend(people, companies, industries, industry_selection)
+    people, companies = spend(people, companies, industries, ind_companies)
 
     # At the end of the month, companies hire new employees and pay their
     # employees

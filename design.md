@@ -88,7 +88,7 @@ the second lists the probability that each value is selected.
 - `employees` (distribution): the distribution of the number of employees
   assigned to companies. For example, in the the config below, each company has
   a 50% chance of being assigned 10 employees, and a 50% chance of 20.
-- `industry_selection` (distribution): the distribution of how likely a person
+- `industries` (distribution): the distribution of how likely a person
   is to spend money in a particular industry. For example, in the config below,
   a person is equally likely to spend at a company in industry 1 or industry 2.
 
@@ -115,7 +115,7 @@ Example:
     [10, 20],
     [0.5, 0.5]
   ],
-  "industry_selection": [
+  "industries": [
     ["industry 1", "industry 2"],
     [0.5, 0.5]
   ]

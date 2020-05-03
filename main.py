@@ -38,7 +38,7 @@ def main(argv):
     spending=config['spending'],
     initial_money=config['initial_money'],
     employees=config['employees'],
-    industry_selection=config['industry_selection']
+    industries=config['industries']
   )
 
   # Write results

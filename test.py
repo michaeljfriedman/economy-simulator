@@ -155,8 +155,7 @@ def test_people_spending1():
   c1 = simulator.Company(money=c_money, industry=ind)
   c2 = simulator.Company(money=c_money, industry=ind)
   companies = [c1, c2]
-  people, companies = simulator.spend([p], companies, {ind: companies},
-    [[ind], [1]])
+  people, companies = simulator.spend([p], companies, [[ind], [1]], {ind: companies})
 
   spent = spending_rate * p_money / simulator.days_per_month
   p_money_exp = p_money - spent
@@ -187,8 +186,8 @@ def test_people_spending2():
   people, companies = simulator.spend(
     people,
     companies,
-    {ind1: [companies[0]], ind2: [companies[1]]},
-    [[ind1, ind2], [p, 1-p]]
+    [[ind1, ind2], [p, 1-p]],
+    {ind1: [companies[0]], ind2: [companies[1]]}
   )
 
   # Check that people's money is correct
@@ -229,8 +228,8 @@ def test_people_spending_when_out_of_business():
   people, companies = simulator.spend(
     [p],
     [c],
-    {ind: [c]},
-    [[ind], [1]]
+    [[ind], [1]],
+    {ind: [c]}
   )
 
   if people[0].money != 100 or companies[0].money != 0:
