@@ -106,6 +106,9 @@ the second lists the probability that each value is selected.
   ]
   ```
 
+- `initial_money` (distribution): the distribution of initial money. Specifies
+  the number of months' worth of money people and companies start with. For
+  people, it's X months' income; for companies, it's X months' payroll.
 - `rehire_rate` (float): the probability that an unemployed is rehired when
   an opportunity arises.
 
@@ -122,6 +125,10 @@ Example:
   ],
   "spending": [
     [[0, 0.25], [0.25, 1]],
+    [0.5, 0.5]
+  ],
+  "initial_money": [
+    [1, 2],
     [0.5, 0.5]
   ],
   "rehire_rate": 1.0

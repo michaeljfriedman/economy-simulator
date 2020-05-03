@@ -36,6 +36,7 @@ def main(argv):
     ndays=config['ndays'],
     income=config['income'],
     spending=config['spending'],
+    initial_money=config['initial_money'],
     rehire_rate=config['rehire_rate']
   )
 

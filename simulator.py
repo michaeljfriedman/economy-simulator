@@ -49,17 +49,21 @@ def reset_spending_rates(people, spending_dist):
   return people
 
 # Initializes the simulator. Returns the list of people and companies
-def init(npersons, ncompanies, income, spending_dist):
+def init(npersons, ncompanies, income_dist, spending_dist, initial_money_dist):
   # Assign each person income from the distribution
-  incomes = np.random.choice(income[0], p=income[1], size=npersons)
+  incomes = np.random.choice(income_dist[0], p=income_dist[1], size=npersons)
+  people_months = np.random.choice(initial_money_dist[0],
+    p=initial_money_dist[1], size=npersons)
   people = [
     Person(
-      money=incomes[i]/months_per_year, # 1 month income
+      money=people_months[i] * incomes[i] / months_per_year, # X months' income
       income=incomes[i]
     ) for i in range(npersons)
   ]
   people = reset_spending_rates(people, spending_dist)
 
+  company_months = np.random.choice(initial_money_dist[0],
+    p=initial_money_dist[1], size=ncompanies)
   companies = [Company() for i in range(ncompanies)]
   people_per_company = int(npersons / ncompanies)
   extra = npersons % ncompanies
@@ -67,8 +71,9 @@ def init(npersons, ncompanies, income, spending_dist):
     companies[i].employees = people[i*people_per_company:(i+1)*people_per_company]
     if i < extra:
       companies[i].employees.append(people[len(people)-1-i]) # add one extra
-    companies[i].money = np.sum([e.income / months_per_year
-      for e in companies[i].employees]) # 1 months' worth of payroll
+    payroll = np.sum([e.income / months_per_year for e in companies[i].employees])
+    companies[i].money = company_months[i] * payroll
+
   return people, companies
 
 # Given the list of people and companies, each person spends a portion of their
@@ -180,6 +185,9 @@ def calculate_stats(people, companies):
 # - spending (2d list of floats): the distribution of people's spending rates.
 #   Analogous to income, but the first list consists of [low, high] pairs
 #   representing the range of rates to choose from.
+# - initial_money (2d list of floats): the distribution of initial money.
+#   Lists the number of months' worth of income people start with / payroll
+#   companies start with.
 # - rehire_rate (float): the probability of an unemployed person being rehired
 #   when an opportunity arises
 #
@@ -196,11 +204,12 @@ def run(
   ndays=0,
   income=[[65000], [1.0]],
   spending=[[[0, 1]], [1]],
+  initial_money=[[1], [1]],
   rehire_rate=1.0
   ):
 
   # Set up simulation
-  people, companies = init(npersons, ncompanies, income, spending)
+  people, companies = init(npersons, ncompanies, income, spending, initial_money)
 
   # Run simluation
   pw, cw, u, oob = calculate_stats(people, companies)
