@@ -33,11 +33,11 @@ def main(argv):
   results = simulator.run(
     ncompanies=config['ncompanies'],
     ndays=config['ndays'],
+    rehire_rate=config['rehire_rate'],
     income=config['income'],
     spending=config['spending'],
     initial_money=config['initial_money'],
     employees=config['employees'],
-    rehire_rate=config['rehire_rate']
   )
 
   # Convert results to csv-writable format

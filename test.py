@@ -1,61 +1,71 @@
 import simulator
 import sys
 
-def test_init_people_assigned_to_companies():
-  print('Check that all people are assigned to a company')
-  people, companies = simulator.init(
-    109,
-    10,
-    [[0], [1]],
-    [[[0, 1]], [1]],
-    [[1], [1]]
-  )
-  expected = [11] * 9 + [10]
-  for p in people:
+def test_init_employee_distribution():
+  print('Check that employees are allocated according to the distribution')
+  low = 10
+  high = 20
+  p = 0.5
+  people, companies = simulator.init(ncompanies=100, employees=[[low, high], [p, p]])
+
+  # Check that all people are assigned to a company
+  for i in range(len(people)):
     present = False
-    for c in companies:
-      if p in c.employees:
+    for j in range(len(companies)):
+      if people[i] in companies[j].employees:
         present = True
         break
     if not present:
-      print('Failed: person not assigned to a company')
-      print('Expected: %s' % str(expected))
-      print('Actual:   %s' % str([len(c.employees) for c in companies]))
+      print('Failed: person %d not assigned to a company')
       return
+
+  # Check distribution is correct
+  nlow = len([c for c in companies if len(c.employees) == low])
+  nhigh = len([c for c in companies if len(c.employees) == high])
+  tolerance = 0.1
+  lower_bound = len(companies) * (p - tolerance)
+  upper_bound = len(companies) * (p + tolerance)
+  if not (lower_bound <= nlow <= upper_bound and lower_bound <= nhigh <= upper_bound):
+    print('Failed: employee distribution is off')
+    print('Expected: num employees in each category in [%d, %d]' % (int(lower_bound), int(upper_bound)))
+    print('Actual:   nlow=%d, nhigh=%d' % (nlow, nhigh))
+    return
   print('Passed')
 
 def test_init_money_distribution():
   print('Check that initial money is allocated according to the distribution')
-  npeople = 100
-  ncompanies = 1
   income = [[1200], [1]]
-  low_months = 1
-  high_months = 2
+  low = 1
+  high = 2
   p = 0.5
-  initial_money = [[low_months, high_months], [p, p]]
-  people, companies = simulator.init(npeople, ncompanies, income, [[[0, 1]], [1]], initial_money)
+  people, companies = simulator.init(
+    ncompanies=1,
+    income=income,
+    initial_money=[[low, high], [p, p]],
+    employees=[[100], [1]]
+  )
 
   expected_people_money = [
-    low_months * income[0][0] / simulator.months_per_year,
-    high_months * income[0][0] / simulator.months_per_year
+    low * income[0][0] / simulator.months_per_year,
+    high * income[0][0] / simulator.months_per_year
   ]
   expected_company_money = set() # all valid values for company money
-  for nmonths in [low_months, high_months]:
+  for nmonths in [low, high]:
     expected_company_money = expected_company_money.union(
-      [nmonths * (i*expected_people_money[0] + (npeople-i)*expected_people_money[1])
-      for i in range(npeople + 1)]
+      [nmonths * (i*expected_people_money[0] + (len(people)-i)*expected_people_money[1])
+      for i in range(len(people) + 1)]
     )
-  npeople_low = len([p for p in people if p.money == expected_people_money[0]])
-  npeople_high = len([p for p in people if p.money == expected_people_money[1]])
+  nlow = len([p for p in people if p.money == expected_people_money[0]])
+  nhigh = len([p for p in people if p.money == expected_people_money[1]])
   tolerance = 0.1
-  low_range = npeople * (p - tolerance)
-  high_range = npeople * (p + tolerance)
+  lower_bound = len(people) * (p - tolerance)
+  upper_bound = len(people) * (p + tolerance)
 
   # Check people's initial money distribution
-  if not (low_range <= npeople_low <= high_range and low_range <= npeople_high <= high_range):
+  if not (lower_bound <= nlow <= upper_bound and lower_bound <= nhigh <= upper_bound):
     print('Failed: initial money distribution is off')
-    print('Expected: npeople in each category in [%d, %d]' % (int(low_range), int(high_range)))
-    print('Actual:   npeople_low=%d, npeople_high=%d' % (npeople_low, npeople_high))
+    print('Expected: npeople in each category in [%d, %d]' % (int(lower_bound), int(upper_bound)))
+    print('Actual:   nlow=%d, nhigh=%d' % (nlow, nhigh))
     return
 
   # Check that the company's initial money is valid
@@ -69,48 +79,46 @@ def test_init_money_distribution():
 
 def test_init_income_distribution():
   print('Check that income is allocated according to the distribution')
-  npersons = 1000
-  low_income = 100
-  high_income = 200
+  low = 100
+  high = 200
   p = 0.5
-  income = [[low_income, high_income], [p, p]]
-  people, _ = simulator.init(npersons, 1, income, [[[0, 1]], [1]], [[1], [1]])
+  income = [[low, high], [p, p]]
+  people, _ = simulator.init(ncompanies=1, income=income, employees=[[1000], [1]])
 
-  npeople_low = len([p for p in people if p.income == low_income])
-  npeople_high = len([p for p in people if p.income == high_income])
+  nlow = len([p for p in people if p.income == low])
+  nhigh = len([p for p in people if p.income == high])
   tolerance = 0.04
-  low_range = npersons * (p - tolerance)
-  high_range = npersons * (p + tolerance)
+  lower_bound = len(people) * (p - tolerance)
+  upper_bound = len(people) * (p + tolerance)
 
-  if not (low_range <= npeople_low <= high_range and low_range <= npeople_high <= high_range):
+  if not (lower_bound <= nlow <= upper_bound and lower_bound <= nhigh <= upper_bound):
     print('Failed: income distribution is off')
-    print('Expected: npeople in each category in [%d, %d]' % (int(low_range), int(high_range)))
-    print('Actual:   npeople_low=%d, npeople_high=%d' % (npeople_low, npeople_high))
+    print('Expected: npeople in each category in [%d, %d]' % (int(lower_bound), int(upper_bound)))
+    print('Actual:   nlow=%d, nhigh=%d' % (nlow, nhigh))
     return
   print('Passed')
 
 def test_init_spending_distribution():
   print('Check that spending rates are allocated according to the distribution')
-  npeople = 1000
   range1 = [0, 0.25]
   range2 = [0.25, 1]
   p = 0.5
-  spending_dist = [
-    [range1, range2],
-    [p, p]
-  ]
-  people, _ = simulator.init(npeople, 10, [[0], [1]], spending_dist, [[1], [1]])
+  people, _ = simulator.init(
+    ncompanies=1,
+    spending=[[range1, range2], [p, p]],
+    employees=[[1000], [1]]
+  )
 
-  npeople_range1 = len([p for p in people if range1[0] <= p.spending_rate < range1[1]])
-  npeople_range2 = len([p for p in people if range2[0] <= p.spending_rate < range2[1]])
+  nrange1 = len([p for p in people if range1[0] <= p.spending_rate < range1[1]])
+  nrange2 = len([p for p in people if range2[0] <= p.spending_rate < range2[1]])
   tolerance = 0.04
-  low_npeople = npeople * (p - tolerance)
-  high_npeople = npeople * (p + tolerance)
+  lower_bound = len(people) * (p - tolerance)
+  upper_bound = len(people) * (p + tolerance)
 
-  if not (low_npeople <= npeople_range1 <= high_npeople and low_npeople <= npeople_range2 <= high_npeople):
+  if not (lower_bound <= nrange1 <= upper_bound and lower_bound <= nrange2 <= upper_bound):
     print('Failed: spending rate distribution is off')
-    print('Expected: npeople in each category in [%d, %d]' % (int(low_npeople), int(high_npeople)))
-    print('Actual:   npeople_range1=%d, npeople_range2=%d' % (npeople_range1, npeople_range2))
+    print('Expected: npeople in each category in [%d, %d]' % (int(lower_bound), int(upper_bound)))
+    print('Actual:   nrange1=%d, nrange2=%d' % (nrange1, nrange2))
     return
   print('Passed')
 
@@ -314,10 +322,10 @@ def test_rehire():
 
 # Run all tests
 def main():
-  test_init_people_assigned_to_companies()
+  test_init_employee_distribution()
   test_init_money_distribution()
-  test_init_spending_distribution()
   test_init_income_distribution()
+  test_init_spending_distribution()
   test_people_spending()
   test_people_spending_when_out_of_business()
   test_pay_employees()

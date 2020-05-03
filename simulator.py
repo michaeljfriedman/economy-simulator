@@ -7,6 +7,27 @@ import numpy as np
 
 months_per_year = 12
 days_per_month = 30
+defaults = {
+  'ncompanies': 10,
+  'ndays': 0,
+  'rehire_rate': 1,
+  'income': [
+    [65000],
+    [1]
+  ],
+  'spending': [
+    [[0, 1]],
+    [1]
+  ],
+  'initial_money': [
+    [1],
+    [1]
+  ],
+  'employees': [
+    [10],
+    [1]
+  ]
+}
 
 # A person in the model
 class Person:
@@ -49,25 +70,32 @@ def reset_spending_rates(people, spending_dist):
   return people
 
 # Initializes the simulator. Returns the list of people and companies
-def init(ncompanies, income_dist, spending_dist, initial_money_dist, employees_dist):
+def init(
+  ncompanies=defaults['ncompanies'],
+  income=defaults['income'],
+  spending=defaults['spending'],
+  initial_money=defaults['initial_money'],
+  employees=defaults['employees']
+  ):
+
   # Assign people to companies
   people = []
   companies = [Company() for i in range(ncompanies)]
-  nemployees = np.random.choice(employees_dist[0], p=employees_dist[1], size=len(companies))
+  nemployees = np.random.choice(employees[0], p=employees[1], size=len(companies))
   for i in range(ncompanies):
     companies[i].employees = [Person() for j in range(nemployees[i])]
     people += companies[i].employees
 
   # Assign each person income, initial money, and spending rates
-  incomes = np.random.choice(income_dist[0], p=income_dist[1], size=len(people))
-  people_months = np.random.choice(initial_money_dist[0], p=initial_money_dist[1], size=len(people))
+  incomes = np.random.choice(income[0], p=income[1], size=len(people))
+  people_months = np.random.choice(initial_money[0], p=initial_money[1], size=len(people))
   for i in range(len(people)):
     people[i].income = incomes[i]
     people[i].money = people_months[i] * people[i].income / months_per_year
-  people = reset_spending_rates(people, spending_dist)
+  people = reset_spending_rates(people, spending)
 
   # Initialize company money
-  company_months = np.random.choice(initial_money_dist[0], p=initial_money_dist[1], size=len(companies))
+  company_months = np.random.choice(initial_money[0], p=initial_money[1], size=len(companies))
   for i in range(len(companies)):
     payroll = np.sum([e.income / months_per_year for e in companies[i].employees])
     companies[i].money = company_months[i] * payroll
@@ -175,6 +203,8 @@ def calculate_stats(people, companies):
 # Runs the simulator, given parameters:
 # - ncompanies (int): the number of companies in the model
 # - ndays (int): the number of days to run for
+# - rehire_rate (float): the probability of an unemployed person being rehired
+#   when an opportunity arises
 # - income (2d list of floats): the distribution of people's annual income.
 #   Specified as two parallel arrays: the first lists the income amounts, and
 #   the second lists the probability of each amount being chosen for a person.
@@ -186,8 +216,6 @@ def calculate_stats(people, companies):
 #   companies start with.
 # - employees (2d list of floats): the distribution of employees assigned to
 #   companies. Lists the possible number of employees a company will start with.
-# - rehire_rate (float): the probability of an unemployed person being rehired
-#   when an opportunity arises
 #
 # Returns a dict of results:
 # - person_wealth: a list of stats, one for each day, where each day is a list
@@ -197,13 +225,13 @@ def calculate_stats(people, companies):
 # - out_of_business: a list of out-of-business rates (fraction of companies
 #   out of business), one for each day
 def run(
-  ncompanies=10,
-  ndays=0,
-  income=[[65000], [1.0]],
-  spending=[[[0, 1]], [1]],
-  initial_money=[[1], [1]],
-  employees=[[10], [1]],
-  rehire_rate=1.0
+  ncompanies=defaults['ncompanies'],
+  ndays=defaults['ndays'],
+  rehire_rate=defaults['rehire_rate'],
+  income=defaults['income'],
+  spending=defaults['spending'],
+  initial_money=defaults['initial_money'],
+  employees=defaults['employees']
   ):
 
   # Set up simulation

@@ -84,6 +84,8 @@ the second lists the probability that each value is selected.
 - `ncompanies` (int): the number of companies in the model
 - `ndays` (int): how many days to run the simulation for (note there are 30 days
   in each month in this model)
+- `rehire_rate` (float): the probability that an unemployed is rehired when
+  an opportunity arises.
 - `income` (distribution): the distribution of people's annual income. An
   employed person receives an equal fraction of their income this each month
   (12 months in each year).
@@ -111,8 +113,6 @@ the second lists the probability that each value is selected.
 - `employees` (distribution): the distribution of the number of employees
   assigned to companies. For example, in the the config below, each company has
   a 50% chance of being assigned 10 employees, and a 50% chance of 20.
-- `rehire_rate` (float): the probability that an unemployed is rehired when
-  an opportunity arises.
 
 Example:
 
@@ -120,6 +120,7 @@ Example:
 {
   "ncompanies": 100,
   "ndays": 360,
+  "rehire_rate": 1.0,
   "income": [
     [25000, 65000, 100000, 250000],
     [0.25, 0.25, 0.25, 0.25]
@@ -135,7 +136,6 @@ Example:
   "employees": [
     [10, 20],
     [0.5, 0.5]
-  ],
-  "rehire_rate": 1.0
+  ]
 }
 ```
