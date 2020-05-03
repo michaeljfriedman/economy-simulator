@@ -108,18 +108,19 @@ def init(
     companies[i].money = company_months[i] * payroll
   return people, companies
 
-# Given the list of people and companies, each person picks a random company
-# within an industry chosen from the industry distribution, and spends a portion
-# of their monthly spending at that company. Returns the new list of people
-# and companies.
-def spend(people, companies, industry_selection):
+# Given the list of people, companies, and industries each person picks a random
+# company within an industry chosen from the industry distribution, and spends a
+# portion of their monthly spending at that company. Returns the new list of
+# people and companies.
+# - industries: a dict {industry: [list of companies in business in that industry]}
+def spend(people, companies, industries, industry_selection):
   in_business = [c for c in companies if c.in_business]
   if len(in_business) != 0:
-    industries = np.random.choice(industry_selection[0], p=industry_selection[1], size=len(people))
+    rand_inds = np.random.choice(industry_selection[0], p=industry_selection[1], size=len(people))
     rands = np.random.rand(len(people)) # random numbers used to pick a company for each person
-    for p, ind, r in zip(people, industries, rands):
-      ind_companies = [c for c in in_business if c.industry == ind]
-      c = ind_companies[int(r * len(ind_companies))]
+    for p, rand_ind, r in zip(people, rand_inds, rands):
+      ind = industries[rand_ind]
+      c = ind[int(r * len(ind))]
       amount = p.spending_rate * p.money / days_per_month
       p.money -= amount
       c.money += amount
@@ -270,7 +271,11 @@ def run(
   results = calculate_stats(results, people, companies)
   for i in tqdm(range(ndays)):
     # Each person spends at a random company
-    people, companies = spend(people, companies, industry_selection)
+    industries = {
+      ind: [c for c in companies if c.in_business and c.industry == ind]
+      for ind in industry_selection[0]
+    }
+    people, companies = spend(people, companies, industries, industry_selection)
 
     # At the end of the month, companies hire new employees and pay their
     # employees

@@ -154,7 +154,9 @@ def test_people_spending1():
   p = simulator.Person(money=p_money, spending_rate=spending_rate)
   c1 = simulator.Company(money=c_money, industry=ind)
   c2 = simulator.Company(money=c_money, industry=ind)
-  people, companies = simulator.spend([p], [c1, c2], [[ind], [1]])
+  companies = [c1, c2]
+  people, companies = simulator.spend([p], companies, {ind: companies},
+    [[ind], [1]])
 
   spent = spending_rate * p_money / simulator.days_per_month
   p_money_exp = p_money - spent
@@ -182,7 +184,12 @@ def test_people_spending2():
     simulator.Company(money=c_money, industry=ind1),
     simulator.Company(money=c_money, industry=ind2)
   ]
-  people, companies = simulator.spend(people, companies, [[ind1, ind2], [p, 1-p]])
+  people, companies = simulator.spend(
+    people,
+    companies,
+    {ind1: [companies[0]], ind2: [companies[1]]},
+    [[ind1, ind2], [p, 1-p]]
+  )
 
   # Check that people's money is correct
   spent = spending_rate * p_money / simulator.days_per_month
@@ -219,7 +226,12 @@ def test_people_spending_when_out_of_business():
   ind = 'industry'
   p = simulator.Person(money=p_money)
   c = simulator.Company(money=c_money, in_business=False, industry=ind)
-  people, companies = simulator.spend([p], [c], [[ind], [1]])
+  people, companies = simulator.spend(
+    [p],
+    [c],
+    {ind: [c]},
+    [[ind], [1]]
+  )
 
   if people[0].money != 100 or companies[0].money != 0:
     print("Failed: someone's money changed")
