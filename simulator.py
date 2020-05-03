@@ -63,16 +63,12 @@ class Company:
 # Picks a new spending rate for each person from the spending distribution.
 # Returns the new list of people.
 def reset_spending_rates(people, spending_dist):
+  range_idx = np.random.choice(range(len(spending_dist[0])), p=spending_dist[1], size=len(people))
   rands = np.random.rand(len(people)) # random numbers used to pick a spending rate for each person
-  ranges, probs = spending_dist
-  ranges = [None] + ranges # add a dummy value
-  probs = list(np.cumsum([0] + probs)) # convert to cumulative sum, which gives us ranges for rands
   for i in range(len(people)):
-    for j in range(1, len(probs)):
-      if probs[j-1] <= rands[i] < probs[j]:
-        # Pick a value uniformly in the corresponding range
-        lo, hi = ranges[j]
-        people[i].spending_rate = lo + rands[i] * (hi - lo)
+    r = range_idx[i]
+    lo, hi = spending_dist[0][r]
+    people[i].spending_rate = lo + rands[i] * (hi - lo)
   return people
 
 # Initializes the simulator. Returns the list of people and companies
@@ -167,19 +163,25 @@ def layoff_employees(people, companies):
   for c in companies:
     if not c.in_business:
       continue
-    layoff_order = np.random.permutation(c.employees)
-    l = 0 # index of next employee to lay off
+
+    # Count number of people to lay off
+    payroll = np.sum([e.income / months_per_year for e in c.employees])
+    layoffs = np.random.permutation(c.employees) # order in which to lay off employees
+    layoff_income = 0 # total income of laid off employees
+    nlayoff = 0
     while True:
-      total_amount = np.sum([e.income / months_per_year for e in c.employees])
-      if total_amount <= c.money:
+      if payroll - layoff_income <= c.money:
         break
-      layoff = layoff_order[l]
-      l += 1
-      c.employees.remove(layoff)
-      layoff.employed = False
-      if len(c.employees) == 0:
+      layoff_income += layoffs[nlayoff].income
+      nlayoff += 1
+      if nlayoff == len(c.employees):
         c.in_business = False
         break
+
+    # Lay off those people
+    for i in range(nlayoff):
+      c.employees.remove(layoffs[i])
+      layoffs[i].employed = False
   return people, companies
 
 # Given the list of people and companies, each company pays their employees
