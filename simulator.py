@@ -9,27 +9,31 @@ months_per_year = 12
 days_per_month = 30
 defaults = {
   'ncompanies': 10,
-  'ndays': 0,
-  'rehire_rate': 1,
-  'income': [
-    [65000],
+  'employees': [
+    [10],
     [1]
   ],
-  'spending': [
-    [[0, 1]],
+  'income': [
+    [65000],
     [1]
   ],
   'initial_money': [
     [1],
     [1]
   ],
-  'employees': [
-    [10],
-    [1]
-  ],
-  'industries': [
-    ['economy'],
-    [1]
+  'periods': [
+    {
+      'ndays': 360,
+      'rehire_rate': 1,
+      'spending': [
+        [[0, 1]],
+        [1]
+      ],
+      'industries': [
+        ['whole_economy'],
+        [1]
+      ],
+    }
   ]
 }
 
@@ -74,16 +78,16 @@ def reset_spending_rates(people, spending_dist):
 # Initializes the simulator. Returns the list of people and companies
 def init(
   ncompanies=defaults['ncompanies'],
-  income=defaults['income'],
-  spending=defaults['spending'],
-  initial_money=defaults['initial_money'],
   employees=defaults['employees'],
-  industries=defaults['industries'][0]
+  income=defaults['income'],
+  initial_money=defaults['initial_money'],
+  spending=defaults['periods'][0]['spending'],
+  industry_names=defaults['periods'][0]['industries'][0]
   ):
 
   # Assign people to companies
   people = []
-  companies = [Company(industry=industries[i % len(industries)]) for i in range(ncompanies)]
+  companies = [Company(industry=industry_names[i % len(industry_names)]) for i in range(ncompanies)]
   nemployees = np.random.choice(employees[0], p=employees[1], size=len(companies))
   for i in range(ncompanies):
     companies[i].employees = [Person(industry=companies[i].industry) for j in range(nemployees[i])]
@@ -213,28 +217,9 @@ def calculate_stats(results, people, companies):
       ind_results[k].append(new_results[k])
   return results
 
-# Runs the simulator, given parameters:
-# - ncompanies (int): the number of companies in the model
-# - ndays (int): the number of days to run for
-# - rehire_rate (float): the probability of an unemployed person being rehired
-#   when an opportunity arises
-# - income (2d list of floats): the distribution of people's annual income.
-#   Specified as two parallel arrays: the first lists the income amounts, and
-#   the second lists the probability of each amount being chosen for a person.
-# - spending (2d list of floats): the distribution of people's spending rates.
-#   Analogous to income, but the first list consists of [low, high] pairs
-#   representing the range of rates to choose from.
-# - initial_money (2d list of floats): the distribution of initial money.
-#   Lists the number of months' worth of income people start with / payroll
-#   companies start with.
-# - employees (2d list of floats): the distribution of employees assigned to
-#   companies. Lists the possible number of employees a company will start with.
-# - industries (2d list of strings and floats): the distribution of
-#   how likely a person is to spend in each industry. Lists the industries by
-#   name, and the probabilities associated with each.
-#
-# Returns a dict of results. Each key is an industry name from
-# industries, and each value is a dict of:
+# Runs the simulator, given the parameters as defined in design.md. Returns a
+# dict of results. Each key is an industry name from industries, and each value
+# is a dict of:
 # - person_wealth: a list of stats, one for each day, where each day is a list
 #   of every percentile of the wealth distribution across people in that
 #   industry.
@@ -245,55 +230,59 @@ def calculate_stats(results, people, companies):
 #   in that industry that are out of business), one for each day
 def run(
   ncompanies=defaults['ncompanies'],
-  ndays=defaults['ndays'],
-  rehire_rate=defaults['rehire_rate'],
   income=defaults['income'],
-  spending=defaults['spending'],
   initial_money=defaults['initial_money'],
   employees=defaults['employees'],
-  industries=defaults["industries"]
+  periods=defaults['periods']
   ):
 
   # Set up simulation
+  industry_names = periods[0]['industries'][0]
   people, companies = init(
     ncompanies=ncompanies,
-    income=income,
-    spending=spending,
-    initial_money=initial_money,
     employees=employees,
-    industries=industries[0]
+    income=income,
+    initial_money=initial_money,
+    spending=periods[0]['spending'],
+    industry_names=industry_names
   )
+  rehire_rate = None
+  spending = None
+  industries = None
 
   # Run simluation
   results = {
     industry: {
       'person_wealth': [], 'company_wealth': [], 'unemployment': [], 'out_of_business': []
-    } for industry in industries[0]
+    } for industry in industry_names
   }
   results = calculate_stats(results, people, companies)
-  for i in tqdm(range(ndays)):
-    # Each person spends at a random company
-    ind_companies = {
-      ind: [c for c in companies if c.in_business and c.industry == ind]
-      for ind in industries[0]
-    }
-    people, companies = spend(people, companies, industries, ind_companies)
+  for i in range(len(periods)):
+    print('Period %d/%d' % (i+1, len(periods)))
 
-    # At the end of the month, companies hire new employees and pay their
-    # employees
-    if i % days_per_month == days_per_month - 1:
-      people, companies = rehire_people(people, companies, rehire_rate)
+    # Set parameters for this period
+    rehire_rate = rehire_rate if 'rehire_rate' not in periods[i] else periods[i]['rehire_rate']
+    spending = spending if 'spending' not in periods[i] else periods[i]['spending']
+    industries = industries if 'industries' not in periods[i] else periods[i]['industries']
 
-      # Company lays off employees until it can afford payroll
-      people, companies = layoff_employees(people, companies)
+    # Run the period
+    for j in tqdm(range(periods[i]['ndays'])):
+      ind_companies = {
+        ind: [c for c in companies if c.in_business and c.industry == ind]
+        for ind in industries[0]
+      }
+      people, companies = spend(people, companies, industries, ind_companies)
 
-      # Pay employees
-      people, companies = pay_employees(people, companies)
+      # At the end of the month, companies hire new employees and pay their
+      # employees
+      if j % days_per_month == days_per_month - 1:
+        people, companies = rehire_people(people, companies, rehire_rate)
+        people, companies = layoff_employees(people, companies)
+        people, companies = pay_employees(people, companies)
 
-      # Reset people's spending rates
-      people = reset_spending_rates(people, spending)
+        # Reset people's spending rates
+        people = reset_spending_rates(people, spending)
 
-    # Calculate stats
-    results = calculate_stats(results, people, companies)
+      results = calculate_stats(results, people, companies)
 
   return results

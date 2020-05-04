@@ -57,38 +57,42 @@ specified as 2 parallel arrays in a 2d array: the first lists the values, and
 the second lists the probability that each value is selected.
 
 - `ncompanies` (int): the number of companies in the model
-- `ndays` (int): how many days to run the simulation for (note there are 30 days
-  in each month in this model)
-- `rehire_rate` (float): the probability that an unemployed is rehired when
-  an opportunity arises.
-- `income` (distribution): the distribution of people's annual income. An
-  employed person receives an equal fraction of their income this each month
-  (12 months in each year).
-- `spending` (distribution): the distribution of people's spending rates. A
-  person picks a spending rate (a fraction of their money) from this
-  distribution each month, and spends that much that month. This one is treated
-  slightly differently. Each value in the first array should be a pair
-  [low, high] indicating the range of rates a person can choose from. People
-  pick a *range* according to the distribution, and then choose a value
-  uniformly within that range. So in the example below, people have a 25%
-  chance of choosing a rate in [0, 0.5], and 75% chance in [0.5, 1] (i.e.
-  a skewed distribution that gives people a tendency to spend more than save).
-  As another example, a uniform distribution over [0, 1] would be represented as:
-
-  ```json
-  [
-    [[0, 1]],
-    [1]
-  ]
-  ```
-
-- `initial_money` (distribution): the distribution of initial money. Specifies
-  the number of months' worth of money people and companies start with. For
-  people, it's X months' income; for companies, it's X months' payroll.
 - `employees` (distribution): the distribution of the number of employees
   assigned to companies. For example, in the the config below, each company has
   a 50% chance of being assigned 10 employees, and a 50% chance of 20.
-- `industries` (distribution): the distribution of how likely a person
+- `income` (distribution): the distribution of people's annual income. An
+  employed person receives an equal fraction of their income this each month
+  (12 months in each year).
+- `initial_money` (distribution): the distribution of initial money. Specifies
+  the number of months' worth of money people and companies start with. For
+  people, it's X months' income; for companies, it's X months' payroll.
+- `periods` (array): an array of periods as specified below. Each period defines
+  a set of parameters, and how long those parameters apply for. If a parameter
+  is not set in a particular period, the value from the previous period is used
+  (but all values must be set in the first period):
+  - `ndays` (int): how many days these parameters apply for (note there are 360
+    days per year in this model, 30 per month)
+  - `rehire_rate` (float): the probability that an unemployed is rehired when
+  an opportunity arises.
+  - `spending` (distribution): the distribution of people's spending rates. A
+    person picks a spending rate (a fraction of their money) from this
+    distribution each month, and spends that much that month. This one is treated
+    slightly differently. Each value in the first array should be a pair
+    [low, high] indicating the range of rates a person can choose from. People
+    pick a *range* according to the distribution, and then choose a value
+    uniformly within that range. So in the example below, people have a 25%
+    chance of choosing a rate in [0, 0.5], and 75% chance in [0.5, 1] (i.e.
+    a skewed distribution that gives people a tendency to spend more).
+    As another example, a uniform distribution over [0, 1] would be represented as:
+
+    ```json
+    [
+      [[0, 1]],
+      [1]
+    ]
+    ```
+
+  - `industries` (distribution): the distribution of how likely a person
   is to spend money in a particular industry. For example, in the config below,
   a person is equally likely to spend at a company in industry 1 or industry 2.
 
@@ -97,27 +101,31 @@ Example:
 ```json
 {
   "ncompanies": 100,
-  "ndays": 360,
-  "rehire_rate": 1.0,
+  "employees": [
+    [10, 20],
+    [0.5, 0.5]
+  ],
   "income": [
     [25000, 65000, 100000, 250000],
     [0.25, 0.25, 0.25, 0.25]
-  ],
-  "spending": [
-    [[0, 0.5], [0.5, 1]],
-    [0.25, 0.75]
   ],
   "initial_money": [
     [1, 2],
     [0.5, 0.5]
   ],
-  "employees": [
-    [10, 20],
-    [0.5, 0.5]
-  ],
-  "industries": [
-    ["industry 1", "industry 2"],
-    [0.5, 0.5]
+  "periods": [
+    {
+      "ndays": 360,
+      "rehire_rate": 1.0,
+      "spending": [
+        [[0, 0.5], [0.5, 1]],
+        [0.25, 0.75]
+      ],
+      "industries": [
+        ["industry 1", "industry 2"],
+        [0.5, 0.5]
+      ]
+    }
   ]
 }
 ```

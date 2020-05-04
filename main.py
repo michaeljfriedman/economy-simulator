@@ -32,13 +32,10 @@ def main(argv):
   # Run simulator
   results = simulator.run(
     ncompanies=config['ncompanies'],
-    ndays=config['ndays'],
-    rehire_rate=config['rehire_rate'],
-    income=config['income'],
-    spending=config['spending'],
-    initial_money=config['initial_money'],
     employees=config['employees'],
-    industries=config['industries']
+    income=config['income'],
+    initial_money=config['initial_money'],
+    periods=config['periods']
   )
 
   # Write results

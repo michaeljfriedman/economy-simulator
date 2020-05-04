@@ -126,7 +126,7 @@ def test_init_industries():
   print('Check that industries are assigned correctly')
   ind1 = 'industry 1'
   ind2 = 'industry 2'
-  people, companies = simulator.init(industries=[ind1, ind2])
+  people, companies = simulator.init(industry_names=[ind1, ind2])
 
   n1 = len([c for c in companies if c.industry == ind1])
   n2 = len([c for c in companies if c.industry == ind2])
