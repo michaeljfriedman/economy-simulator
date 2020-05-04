@@ -42,7 +42,7 @@ class Person:
 
   def __init__(self, money=0, income=0, employed=True, spending_rate=0, industry='economy'):
     self.money = money
-    self.income = income
+    self.income = income # income *per month* (not annual)
     self.employed = employed
     self.spending_rate = spending_rate
     self.industry = industry
@@ -97,14 +97,14 @@ def init(
   incomes = np.random.choice(income[0], p=income[1], size=len(people))
   people_months = np.random.choice(initial_money[0], p=initial_money[1], size=len(people))
   for i in range(len(people)):
-    people[i].income = incomes[i]
-    people[i].money = people_months[i] * people[i].income / months_per_year
+    people[i].income = incomes[i] / months_per_year
+    people[i].money = people_months[i] * people[i].income
   people = reset_spending_rates(people, spending)
 
   # Initialize company money
   company_months = np.random.choice(initial_money[0], p=initial_money[1], size=len(companies))
   for i in range(len(companies)):
-    payroll = np.sum([e.income / months_per_year for e in companies[i].employees])
+    payroll = np.sum([e.income for e in companies[i].employees])
     companies[i].money = company_months[i] * payroll
   return people, companies
 
@@ -139,9 +139,9 @@ def rehire_people(people, companies, rehire_rate):
   rands = np.random.rand(len(unemployed)) # rand numbers used to select the company that will hire this person
 
   # Build an array where entry (i, j) is whether company j can afford to hire person i
-  cost_of_new_hire = np.array([p.income / months_per_year for p in unemployed])
+  cost_of_new_hire = np.array([p.income for p in unemployed])
   company_money = np.array([c.money for c in in_business])
-  company_payroll = np.array([np.sum([e.income / months_per_year for e in c.employees]) for c in in_business])
+  company_payroll = np.array([np.sum([e.income for e in c.employees]) for c in in_business])
   can_afford = np.outer(1/cost_of_new_hire, company_money - company_payroll) >= 1
 
   # Pick the company that will hire each person
@@ -169,7 +169,7 @@ def layoff_employees(people, companies):
       continue
 
     # Count number of people to lay off
-    payroll = np.sum([e.income / months_per_year for e in c.employees])
+    payroll = np.sum([e.income for e in c.employees])
     layoffs = np.random.permutation(c.employees) # order in which to lay off employees
     layoff_income = 0 # total income of laid off employees
     nlayoff = 0
@@ -195,7 +195,7 @@ def pay_employees(people, companies):
     if not c.in_business:
       continue
     for e in c.employees:
-      amount = e.income / months_per_year
+      amount = e.income
       c.money -= amount
       e.money += amount
   return people, companies

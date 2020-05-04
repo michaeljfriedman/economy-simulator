@@ -79,14 +79,14 @@ def test_init_money_distribution():
 
 def test_init_income_distribution():
   print('Check that income is allocated according to the distribution')
-  low = 100
-  high = 200
+  low = 12
+  high = 24
   p = 0.5
   income = [[low, high], [p, p]]
   people, _ = simulator.init(ncompanies=1, income=income, employees=[[1000], [1]])
 
-  nlow = len([p for p in people if p.income == low])
-  nhigh = len([p for p in people if p.income == high])
+  nlow = len([p for p in people if p.income == low / simulator.months_per_year])
+  nhigh = len([p for p in people if p.income == high / simulator.months_per_year])
   tolerance = 0.04
   lower_bound = len(people) * (p - tolerance)
   upper_bound = len(people) * (p + tolerance)
@@ -243,8 +243,8 @@ def test_pay_employees():
   print('Check that companies paying employees is working (4 people, 2 companies)')
   npeople = 4
   p_money = 1
-  p_income = 12
-  c_money = (npeople / 2) * p_income / simulator.months_per_year
+  p_income = 1
+  c_money = (npeople / 2) * p_income
   people = [simulator.Person(money=p_money, income=p_income) for i in range(npeople)]
   companies = [
     simulator.Company(money=c_money, employees=people[:int(npeople/2)]),
@@ -253,14 +253,14 @@ def test_pay_employees():
   people, companies = simulator.pay_employees(people, companies)
 
   for p in people:
-    expected = p_money + p_income / simulator.months_per_year
+    expected = p_money + p_income
     if p.money != expected:
       print('Failed: person %s has wrong amount of money' % str(p))
       print('Expected: %.2f' % expected)
       print('Actual:   %.2f' % p.money)
       return
   for c in companies:
-    expected = c_money - (npeople / 2) * (p_income / simulator.months_per_year)
+    expected = c_money - (npeople / 2) * (p_income)
     if c.money != expected:
       print('Failed: company %s has wrong amount of money' % str(c))
       print('Expected: %.2f' % expected)
@@ -272,8 +272,8 @@ def test_unemployed_people_are_not_paid():
   print('Check that unemployed people do not get paid (1 employed person, 1 unemployed person, 1 company)')
   npeople = 2
   p_money = 1
-  p_income = 12
-  c_money = npeople * p_income / simulator.months_per_year
+  p_income = 1
+  c_money = npeople * p_income
   p1 = simulator.Person(money=p_money, income=p_income)
   p2 = simulator.Person(money=p_money, income=p_income, employed=False)
   c = simulator.Company(money=c_money, employees=[p1])
@@ -281,7 +281,7 @@ def test_unemployed_people_are_not_paid():
   p1, p2 = people
   c = companies[0]
 
-  p1_pay = p_income / simulator.months_per_year
+  p1_pay = p_income
   p1_money_exp = p_money + p1_pay
   if p1.money != p1_money_exp:
     print('Failed: person 1 has wrong amount of money')
@@ -305,40 +305,46 @@ def test_unemployed_people_are_not_paid():
   print('Passed')
 
 def test_layoff():
-  print("Check that company lays off 1 employee when it can't afford them anymore (2 people, 1 company)")
-  npeople = 2
-  p_income = 12
-  c_money = (npeople / 2) * p_income / simulator.months_per_year # only enough for 1 person
+  print("Check that company lays off 2/4 employees when it can't afford them anymore (4 people, 1 company)")
+  npeople = 4
+  p_income = 1
+  c_money = (npeople / 2) * p_income # only enough for 1/2
   people = [simulator.Person(income=p_income) for i in range(npeople)]
   companies = [simulator.Company(money=c_money, employees=[p for p in people])]
 
   people, companies = simulator.layoff_employees(people, companies)
-  unemployed = 0 if not people[0].employed else 1
-  employed = int(not unemployed)
+  unemployed = [i for i in range(len(people)) if not people[i].employed]
+  employed = [i for i in range(len(people)) if people[i].employed]
   c = companies[0]
 
-  if people[unemployed].employed:
-    print('Failed: both people were still employed')
-    print('Expected: One person should be unemployed, and the other should be employed')
-    print('Actual: people=%s' % ([str(p) for p in people]))
+  if len(unemployed) != npeople / 2:
+    print('Failed: wrong number of people were laid off')
+    print('Expected: %d' % (npeople / 2))
+    print('Actual:   %d' % len(unemployed))
     return
-  if not people[employed].employed:
-    print('Failed: both people were laid off')
-    print('Expected: One person should be unemployed, and the other should be employed')
-    print('Actual: people=%s' % ([str(p) for p in people]))
+  if len(employed) != npeople / 2:
+    print('Failed: wrong number of people are still employed')
+    print('Expected: %d' % (npeople / 2))
+    print('Actual:   %d' % len(employed))
     return
-  if len(c.employees) != 1:
+  if len(c.employees) != npeople / 2:
     print('Failed: company has the wrong number of employees')
-    print('Expected: len(c.employees) = 1')
-    print('Actual:   len(c.employees) = %d' % len(c.employees))
+    print('Expected: %d' % (npeople / 2))
+    print('Actual:   %d' % len(c.employees))
     return
-  if c.employees[0] != people[employed]:
-    print('Failed: company has the wrong person listed as its employee')
-    print('Expected: company employee should be people[%d]=%s' % (employed, str(people[employed])))
-    print('Actual:   company employee is people[%d]=%s' % (unemployed, str(people[unemployed])))
+
+  employee_indices = []
+  for e in c.employees:
+    for i in range(len(people)):
+      if e == people[i]:
+        employee_indices.append(i)
+  if sorted(employee_indices) != sorted(employed):
+    print('Failed: company has the wrong people listed as employees')
+    print('Expected: people indices %s' % sorted(employed))
+    print('Actual:   people indices %s' % sorted(employee_indices))
     return
   if not c.in_business:
-    print('Failed: company is marked out of business even though it still has 1 employee')
+    print('Failed: company is marked out of business even though it still has employees')
     print('Expected: c.in_business = True')
     print('Actual:   c.in_business = %s' % str(c.in_business))
   print('Passed')
@@ -372,16 +378,16 @@ def test_company_goes_out_of_business():
 
 def test_rehire():
   print('Check that rehiring works (1 person, 1 company that can afford to hire that person)')
-  income = 12
+  income = 1
   old_ind = 'old industry'
   new_ind = 'new industry'
   people = [simulator.Person(income=income, employed=False, industry=old_ind)]
-  companies = [simulator.Company(money=income/simulator.months_per_year, industry=new_ind)]
+  companies = [simulator.Company(money=income, industry=new_ind)]
 
   p_exp = simulator.Person(income=income, employed=True, industry=new_ind)
   expected_people = [p_exp]
   expected_companies = [simulator.Company(
-    money=income/simulator.months_per_year,
+    money=income,
     employees=[p_exp],
     industry=new_ind
   )]
