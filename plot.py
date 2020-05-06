@@ -35,23 +35,25 @@ def main():
       for row in r:
         x[result_name].append(float(row[0]))
         y[result_name].append([float(entry) for entry in row[1:]])
+
+  sample = lambda data: [data[i] for i in [0] + list(range(1, len(data), simulator.days_per_month))]
+  for result_name in y.keys():
+    # Sample the rows - one row per month
+    x[result_name] = sample(x[result_name])
+    y[result_name] = sample(y[result_name])
+
+    # Filter to only the percentiles specified
     x[result_name] = np.array(x[result_name])
     y[result_name] = np.array(y[result_name])
-
-  # Filter to only the percentiles specified
-  for result_name in y.keys():
     if y[result_name].shape[1] == 101: # if data is percentile data
       y[result_name] = y[result_name][:,args.percentiles]
-
-  # Filters data to 1 row per month
-  sample = lambda a: a[0] + a[[i for i in range(1, a.shape[0], simulator.days_per_month)]]
 
   # Plot data
   f = plt.figure(1, figsize=(20, 15))
   nresults = len(x.keys())
   for i, result_name in zip(range(1, nresults+1), x.keys()):
     ax = f.add_subplot(nresults, 1, i)
-    ax.plot(sample(x[result_name]), sample(y[result_name]))
+    ax.plot(x[result_name], y[result_name])
     ax.set_title(result_name)
     ax.grid()
   plt.savefig(args.output)
