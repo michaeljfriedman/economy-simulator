@@ -34,7 +34,6 @@ def main(argv):
     ncompanies=config['ncompanies'],
     employees=config['employees'],
     income=config['income'],
-    initial_money=config['initial_money'],
     periods=config['periods']
   )
 

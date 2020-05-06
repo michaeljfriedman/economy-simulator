@@ -63,9 +63,6 @@ the second lists the probability that each value is selected.
 - `income` (distribution): the distribution of people's annual income. An
   employed person receives an equal fraction of their income this each month
   (12 months in each year).
-- `initial_money` (distribution): the distribution of initial money. Specifies
-  the number of months' worth of money people and companies start with. For
-  people, it's X months' income; for companies, it's X months' payroll.
 - `periods` (array): an array of periods as specified below. Each period defines
   a set of parameters, and how long those parameters apply for. If a parameter
   is not set in a particular period, the value from the previous period is used
@@ -74,6 +71,11 @@ the second lists the probability that each value is selected.
     days per year in this model, 30 per month)
   - `rehire_rate` (float): the probability that an unemployed is rehired when
   an opportunity arises.
+  - `people_new_money` (distribution): the distribution of additional money
+    people get at the start of this period. Specified in months of income. (The
+    amount set in the first period is how much people are initialized with.)
+  - `companies_new_money` (distribution): analogous distribution for companies.
+    Specified in months of payroll.
   - `spending` (distribution): the distribution of people's spending rates. A
     person picks a spending rate (a fraction of their money) from this
     distribution each month, and spends that much that month. This one is treated
@@ -109,14 +111,18 @@ Example:
     [25000, 65000, 100000, 250000],
     [0.25, 0.25, 0.25, 0.25]
   ],
-  "initial_money": [
-    [1, 2],
-    [0.5, 0.5]
-  ],
   "periods": [
     {
       "ndays": 360,
       "rehire_rate": 1.0,
+      "people_new_money": [
+        [1, 2],
+        [0.5, 0.5]
+      ],
+      "companies_new_money": [
+        [1, 2],
+        [0.5, 0.5]
+      ],
       "spending": [
         [[0, 0.5], [0.5, 1]],
         [0.25, 0.75]

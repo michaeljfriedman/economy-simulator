@@ -17,14 +17,18 @@ defaults = {
     [65000],
     [1]
   ],
-  'initial_money': [
-    [1],
-    [1]
-  ],
   'periods': [
     {
       'ndays': 360,
       'rehire_rate': 1,
+      'people_new_money': [
+        [1],
+        [1]
+      ],
+      'companies_new_money': [
+        [1],
+        [1]
+      ],
       'spending': [
         [[0, 1]],
         [1]
@@ -80,7 +84,6 @@ def init(
   ncompanies=defaults['ncompanies'],
   employees=defaults['employees'],
   income=defaults['income'],
-  initial_money=defaults['initial_money'],
   spending=defaults['periods'][0]['spending'],
   industry_names=defaults['periods'][0]['industries'][0]
   ):
@@ -93,19 +96,26 @@ def init(
     companies[i].employees = [Person(industry=companies[i].industry) for j in range(nemployees[i])]
     people += companies[i].employees
 
-  # Assign each person income, initial money, and spending rates
+  # Assign each person income and spending rates
   incomes = np.random.choice(income[0], p=income[1], size=len(people))
-  people_months = np.random.choice(initial_money[0], p=initial_money[1], size=len(people))
   for i in range(len(people)):
     people[i].income = incomes[i] / months_per_year
-    people[i].money = people_months[i] * people[i].income
   people = reset_spending_rates(people, spending)
+  return people, companies
 
-  # Initialize company money
-  company_months = np.random.choice(initial_money[0], p=initial_money[1], size=len(companies))
+# Given the list of people and companies, and the distribution of additional
+# money each should get, gives each person and company an amount of additional
+# money drawn from their distribution. Returns the new list of people and
+# companies.
+def give_new_money(people, companies, people_new_money, companies_new_money):
+  people_months = np.random.choice(people_new_money[0], p=people_new_money[1], size=len(people))
+  for i in range(len(people)):
+    people[i].money += people_months[i] * people[i].income
+
+  companies_months = np.random.choice(companies_new_money[0], p=companies_new_money[1], size=len(companies))
   for i in range(len(companies)):
     payroll = np.sum([e.income for e in companies[i].employees])
-    companies[i].money = company_months[i] * payroll
+    companies[i].money += companies_months[i] * payroll
   return people, companies
 
 # Given the list of people, companies, and industries each person picks a random
@@ -231,7 +241,6 @@ def calculate_stats(results, people, companies):
 def run(
   ncompanies=defaults['ncompanies'],
   income=defaults['income'],
-  initial_money=defaults['initial_money'],
   employees=defaults['employees'],
   periods=defaults['periods']
   ):
@@ -242,10 +251,11 @@ def run(
     ncompanies=ncompanies,
     employees=employees,
     income=income,
-    initial_money=initial_money,
     spending=periods[0]['spending'],
     industry_names=industry_names
   )
+  people_new_money = None
+  companies_new_money = None
   rehire_rate = None
   spending = None
   industries = None
@@ -261,9 +271,14 @@ def run(
     print('Period %d/%d' % (i+1, len(periods)))
 
     # Set parameters for this period
+    people_new_money = people_new_money if 'people_new_money' not in periods[i] else periods[i]['people_new_money']
+    companies_new_money = companies_new_money if 'companies_new_money' not in periods[i] else periods[i]['companies_new_money']
     rehire_rate = rehire_rate if 'rehire_rate' not in periods[i] else periods[i]['rehire_rate']
     spending = spending if 'spending' not in periods[i] else periods[i]['spending']
     industries = industries if 'industries' not in periods[i] else periods[i]['industries']
+
+    # Give additional money for this period
+    people, companies = give_new_money(people, companies, people_new_money, companies_new_money)
 
     # Run the period
     for j in tqdm(range(periods[i]['ndays'])):

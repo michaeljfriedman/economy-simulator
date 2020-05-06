@@ -32,51 +32,6 @@ def test_init_employee_distribution():
     return
   print('Passed')
 
-def test_init_money_distribution():
-  print('Check that initial money is allocated according to the distribution')
-  income = [[1200], [1]]
-  low = 1
-  high = 2
-  p = 0.5
-  people, companies = simulator.init(
-    ncompanies=1,
-    income=income,
-    initial_money=[[low, high], [p, p]],
-    employees=[[100], [1]]
-  )
-
-  expected_people_money = [
-    low * income[0][0] / simulator.months_per_year,
-    high * income[0][0] / simulator.months_per_year
-  ]
-  expected_company_money = set() # all valid values for company money
-  for nmonths in [low, high]:
-    expected_company_money = expected_company_money.union(
-      [nmonths * (i*expected_people_money[0] + (len(people)-i)*expected_people_money[1])
-      for i in range(len(people) + 1)]
-    )
-  nlow = len([p for p in people if p.money == expected_people_money[0]])
-  nhigh = len([p for p in people if p.money == expected_people_money[1]])
-  tolerance = 0.1
-  lower_bound = len(people) * (p - tolerance)
-  upper_bound = len(people) * (p + tolerance)
-
-  # Check people's initial money distribution
-  if not (lower_bound <= nlow <= upper_bound and lower_bound <= nhigh <= upper_bound):
-    print('Failed: initial money distribution is off')
-    print('Expected: npeople in each category in [%d, %d]' % (int(lower_bound), int(upper_bound)))
-    print('Actual:   nlow=%d, nhigh=%d' % (nlow, nhigh))
-    return
-
-  # Check that the company's initial money is valid
-  c = companies[0]
-  if c.money not in expected_company_money:
-    print('Failed: company has wrong amount of money')
-    print('Expected: one of %s' % str(sorted(list(expected_company_money))))
-    print ('Actual:  %.2f' % c.money)
-    return
-  print('Passed')
-
 def test_init_income_distribution():
   print('Check that income is allocated according to the distribution')
   low = 12
@@ -142,6 +97,33 @@ def test_init_industries():
         print('Failed: person is not assigned the industry of their company')
         print('Expected: c.industry=%s, p.industry=%s' % (c.industry, c.industry))
         print('Actual:   c.industry=%s, p.industry=%s' % (c.industry, p.industry))
+        return
+  print('Passed')
+
+def test_new_money():
+  print('Check that new money is allocated according to the distribution')
+  n = 1000
+  income = 1
+  init_money = 10
+  low = 1
+  high = 2
+  p = 0.25
+  people = [simulator.Person(money=init_money, income=income) for i in range(n)]
+  companies = [simulator.Company(money=init_money, employees=[people[i]]) for i in range(n)]
+  new_money = [[low, high], [p, 1 - p]]
+  people, companies = simulator.give_new_money(people, companies, new_money, new_money)
+
+  # Check that money distributions for people and companies are correct
+  tolerance = 0.05
+  for group_name, group in zip(['people', 'companies'], [people, companies]):
+    for amt, prob in zip(new_money[0], new_money[1]):
+      n_amt = len([x for x in group if x.money == init_money + amt * income])
+      lower_bound = len(group) * (prob - tolerance)
+      upper_bound = len(group) * (prob + tolerance)
+      if not (lower_bound <= n_amt <= upper_bound):
+        print('Failed: %s money distribution is off' % group_name)
+        print('Expected: for amt=%d w/ prob=%.2f, n_amt should be in range [%d, %d]' % (amt, prob, int(lower_bound), int(upper_bound)))
+        print('Actual:   n_amt=%d' % n_amt)
         return
   print('Passed')
 
@@ -411,10 +393,10 @@ def test_rehire():
 # Run all tests
 def main():
   test_init_employee_distribution()
-  test_init_money_distribution()
   test_init_income_distribution()
   test_init_spending_distribution()
   test_init_industries()
+  test_new_money()
   test_people_spending1()
   test_people_spending2()
   test_people_spending_when_out_of_business()
