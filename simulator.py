@@ -218,10 +218,10 @@ def calculate_stats(results, people, companies):
     ind_companies = [c for c in companies if c.industry == ind]
     percentiles = range(0, 101)
     new_results = {
-      'person_wealth': list(np.percentile([p.money for p in ind_people], percentiles)),
-      'company_wealth': list(np.percentile([c.money for c in ind_companies], percentiles)),
-      'unemployment': len([p for p in ind_people if not p.employed]) / len(ind_people),
-      'out_of_business': len([c for c in ind_companies if not c.in_business]) / len(ind_companies)
+      'person_wealth': [0] * len(percentiles) if len(ind_people) == 0 else list(np.percentile([p.money for p in ind_people], percentiles)),
+      'company_wealth': [0] * len(percentiles) if len(ind_companies) == 0 else list(np.percentile([c.money for c in ind_companies], percentiles)),
+      'unemployment': 1 if len(ind_people) == 0 else len([p for p in ind_people if not p.employed]) / len(ind_people),
+      'out_of_business': 1 if len(ind_companies) == 0 else len([c for c in ind_companies if not c.in_business]) / len(ind_companies)
     }
     for k in ind_results.keys():
       ind_results[k].append(new_results[k])
