@@ -2,7 +2,6 @@
 The simulator.
 '''
 
-from tqdm import tqdm
 import numpy as np
 
 months_per_year = 12
@@ -227,9 +226,22 @@ def calculate_stats(results, people, companies):
       ind_results[k].append(new_results[k])
   return results
 
-# Runs the simulator, given the parameters as defined in design.md. Returns a
-# dict of results. Each key is an industry name from industries, and each value
-# is a dict of:
+# Runs the simulator, given the parameters as defined in design.md; and an
+# optional callback function update_progress, which is called at the end of each
+# day, with the following arguments:
+# - period: the index of the current period (from 0)
+# - day: the index of the current day (from 0)
+# - people: the list of people
+# - companies: the list of companies
+# - results: the dict of results through the current day, as described below.
+# The caller can use this to report progress up a level.
+#
+# NOTE: Be mindful - these args are passed by reference, so you can technically
+# change them and mess with the simulation. Please don't do that. Read only. I
+# would have passed a copy instead, but it slows down the simulation a lot.
+#
+# Returns a dict of results. Each key is an industry name from industries, and
+# each value is a dict of:
 # - person_wealth: a list of stats, one for each day, where each day is a list
 #   of every percentile of the wealth distribution across people in that
 #   industry.
@@ -242,7 +254,8 @@ def run(
   ncompanies=defaults['ncompanies'],
   income=defaults['income'],
   employees=defaults['employees'],
-  periods=defaults['periods']
+  periods=defaults['periods'],
+  update_progress=lambda period, day, people, companies, results: None
   ):
 
   # Set up simulation
@@ -268,8 +281,6 @@ def run(
   }
   results = calculate_stats(results, people, companies)
   for i in range(len(periods)):
-    print('Period %d/%d' % (i+1, len(periods)))
-
     # Set parameters for this period
     people_new_money = people_new_money if 'people_new_money' not in periods[i] else periods[i]['people_new_money']
     companies_new_money = companies_new_money if 'companies_new_money' not in periods[i] else periods[i]['companies_new_money']
@@ -281,7 +292,7 @@ def run(
     people, companies = give_new_money(people, companies, people_new_money, companies_new_money)
 
     # Run the period
-    for j in tqdm(range(periods[i]['ndays'])):
+    for j in range(periods[i]['ndays']):
       ind_companies = {
         ind: [c for c in companies if c.in_business and c.industry == ind]
         for ind in industries[0]
@@ -299,5 +310,6 @@ def run(
         people = reset_spending_rates(people, spending)
 
       results = calculate_stats(results, people, companies)
+      update_progress(i, j, people, companies, results)
 
   return results
