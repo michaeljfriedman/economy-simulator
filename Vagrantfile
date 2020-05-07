@@ -71,6 +71,7 @@ Vagrant.configure("2") do |config|
     rm /usr/bin/pip
     ln -s /usr/bin/python3.8 /usr/bin/python
     echo 'alias pip="python -m pip"' >> /home/vagrant/.bash_aliases
+    echo 'export PYTHONPATH=/vagrant/' >> /home/vagrant/.bashrc
 
     # Set up git
     git config --global auto.crlf false

@@ -9,12 +9,12 @@ Example:
 python main.py --config=config.json --output=output
 '''
 
+from simulator import simulator
 from tqdm import tqdm
 import argparse
 import csv
 import json
 import os
-import simulator
 import sys
 
 def main(argv):

@@ -3,12 +3,12 @@ Plots the results from the csv files in a directory.
 '''
 
 from collections import defaultdict
+from simulator import simulator
 import argparse
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import simulator
 
 def main():
   parser = argparse.ArgumentParser()
