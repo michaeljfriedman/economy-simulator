@@ -23,12 +23,13 @@ Vagrant.configure("2") do |config|
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
   # NOTE: This will enable public access to the opened port
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
+  config.vm.network "forwarded_port", guest: 8000, host: 8000
+  config.vm.network "forwarded_port", guest: 8001, host: 8001
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine and only allow access
   # via 127.0.0.1 to disable public access
-  # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+  # config.vm.network "forwarded_port", guest: 80, host: 8000, host_ip: "127.0.0.1"
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -63,17 +64,18 @@ Vagrant.configure("2") do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     apt-get update
-    apt-get install -y git python3-pip
+    apt-get install -y git python3.8 python3-pip
 
     # Set up python 3
     rm /usr/bin/python
-    ln -s /usr/bin/python3.6 /usr/bin/python
-    ln -s /usr/bin/pip3 /usr/bin/pip
+    rm /usr/bin/pip
+    ln -s /usr/bin/python3.8 /usr/bin/python
+    echo 'alias pip="python -m pip"' >> /home/vagrant/.bash_aliases
 
     # Set up git
     git config --global auto.crlf false
 
     # Install deps
-    pip install argparse numpy matplotlib tqdm
+    python3.8 -m pip install argparse numpy matplotlib tqdm flask websockets
   SHELL
 end
