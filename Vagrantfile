@@ -24,7 +24,6 @@ Vagrant.configure("2") do |config|
   # accessing "localhost:8080" will access port 80 on the guest machine.
   # NOTE: This will enable public access to the opened port
   config.vm.network "forwarded_port", guest: 8000, host: 8000
-  config.vm.network "forwarded_port", guest: 8001, host: 8001
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine and only allow access
@@ -64,19 +63,17 @@ Vagrant.configure("2") do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     apt-get update
-    apt-get install -y git python3.8 python3-pip
+    apt-get install -y git python3-pip
 
     # Set up python 3
-    rm /usr/bin/python
-    rm /usr/bin/pip
-    ln -s /usr/bin/python3.8 /usr/bin/python
-    echo 'alias pip="python -m pip"' >> /home/vagrant/.bash_aliases
+    ln -s /usr/bin/python3.6 /usr/bin/python
+    ln -s /usr/bin/pip3 /usr/bin/pip
     echo 'export PYTHONPATH=/vagrant/' >> /home/vagrant/.bashrc
 
     # Set up git
     git config --global auto.crlf false
 
     # Install deps
-    python3.8 -m pip install argparse numpy matplotlib tqdm flask websockets
+    pip install argparse numpy matplotlib tqdm Flask Flask-Sockets gunicorn
   SHELL
 end

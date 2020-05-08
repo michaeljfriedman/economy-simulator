@@ -1,7 +1,7 @@
 // Button sends the two number inputs to the server and displays the
 // result.
 document.getElementById("button").addEventListener("click", () => {
-  let ws = new WebSocket("ws://localhost:8001/");
+  let ws = new WebSocket("ws://localhost:8000/run-simulator");
 
   ws.onopen = function(event) {
     msg = {
