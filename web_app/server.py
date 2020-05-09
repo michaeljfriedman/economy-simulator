@@ -27,30 +27,23 @@ def index_js():
   with open('index.js') as f:
     return f.read()
 
+# Runs the simulator with the config provided by the client. Sends a simple
+# progress update each day - just the current period/day.
 @sockets.route('/run-simulator')
 def run_simulator(ws):
-  # config = json.loads(ws.receive())
-  # def update_progress(period, day, people, companies, results):
-  #   try:
-  #     ws.send(json.dumps(results))
-  #   except Exception:
-  #     pass
-  # simulator.run(
-  #   ncompanies=config['ncompanies'],
-  #   employees=config['employees'],
-  #   income=config['income'],
-  #   periods=config['periods'],
-  #   update_progress=update_progress
-  # )
-  # ws.close()
-
-  msg = json.loads(ws.receive())
-  x0 = int(msg['x'])
-  x1 = int(msg['y'])
-  for i in range(10):
-    s = x0 + x1
-    ws.send(json.dumps({'sum': s}))
-    x0 = x1
-    x1 = s
-    time.sleep(1)
+  config = json.loads(ws.receive())
+  def update_progress(period, day, people, companies, results):
+    try:
+      msg = json.dumps({'results': 'period: %d, day %d' % (period, day)})
+      ws.send(msg)
+    except Exception:
+      pass
+  simulator.run(
+    ncompanies=config['ncompanies'],
+    employees=config['employees'],
+    income=config['income'],
+    periods=config['periods'],
+    update_progress=update_progress
+  )
+  ws.send(json.dumps({'results': 'done'}))
   ws.close()
