@@ -7,11 +7,6 @@ $(document).ready(() => {
   // Define the page components
   //
 
-  // Title
-  const title = "Economy Simulator";
-  $("title").text(title);
-  $("#title").text(title);
-
   // Creates a new jQuery element
   let element = function(name) {
     return $(document.createElement(name));
@@ -38,12 +33,6 @@ $(document).ready(() => {
       this.element = element("div")
         .append(label)
         .append(input);
-    }
-
-    onInput(f) {
-      this.element
-        .find("input")
-        .on("input", f);
     }
   }
 
@@ -144,97 +133,77 @@ $(document).ready(() => {
     }
   }
 
-  // An input field, given its type, name, and display name. Tracks the value
-  // of the input.
-  class Input {
+  // A container for all the inputs in a distribution
+  class DistributionInputs {
     constructor(type, displayName) {
-      this.element = null;
-      this.value = null;
-      this.distributionInputs = []; // for type == "distribution" only, an array of DistributionInputs
+      this.type = type;
+      this.values = [];
+      this.probabilities = [];
+      this.inputs = []; // array of DistributionInput
 
       // Create the element
-      this.element = element("div")
-        .addClass("form-group");
+      let label = element("label")
+        .text(displayName);
 
-      // Number input
-      if (type == "number") {
-        this.value = 0;
-        let input = new NumberInput(displayName, this.value);
-        input.onInput(() => {
-          this.value = input.value;
-        });
-        this.element.append(input.element);
+      let buttons = new AddRemoveButtons(
+        // The "add" button adds a new DistributionInput
+        () => {
+          this.add();
+        },
 
-      // Distribution input
-      } else if (type.startsWith("distribution")) {
-        let subtype = type.substring(type.indexOf("-") + 1);
-        let defaultValue;
-        if (subtype == "number") {
-          defaultValue = 0;
-        } else if (subtype == "text") {
-          defaultValue = "";
-        } else if (subtype == "range") {
-          defaultValue = [0, 0];
-        } else {
-          console.error("subtype '" + subtype + "' not supported");
+        // The "remove" button removes the last DistributionInput
+        () => {
+          this.remove();
         }
-        let defaultProbability = 0;
-        this.value = {
-          values: [],
-          probabilities: []
-        };
+      );
 
-        let label = element("label")
-          .text(displayName);
+      this.element = element("div").addClass("form-group")
+        .append(label)
+        .append(buttons.element);
 
-        let addInput = () => {
-          let nextIndex = this.distributionInputs.length;
-          let input = new DistributionInput(subtype, defaultValue, defaultProbability);
-          input.onInput(() => {
-            this.value.values[nextIndex] = input.value;
-            this.value.probabilities[nextIndex] = input.probability;
-          });
-          this.value.values.push(defaultValue);
-          this.value.probabilities.push(defaultProbability);
-          this.distributionInputs.push(input);
-          return input;
-        };
+      this.add();
+    }
 
-        let buttons = new AddRemoveButtons(
-          // The "add" button adds a new DistributionInput
-          () => {
-            let input = addInput();
-            this.element.append(input.element);
-          },
-
-          // The "remove" button removes the last DistributionInput
-          () => {
-            let n = this.distributionInputs.length;
-            if (n != 0) {
-              let last = this.distributionInputs[n-1];
-              this.distributionInputs.pop();
-              last.element.remove();
-            }
-          }
-        );
-
-        let input = addInput();
-
-        this.element.append(label)
-          .append(buttons.element)
-          .append(input.element);
+    add() {
+      // Set default values based on the type
+      let defaultValue;
+      if (this.type == "number") {
+        defaultValue = 0;
+      } else if (this.type == "text") {
+        defaultValue = "";
+      } else if (this.type == "range") {
+        defaultValue = [0, 0];
       } else {
-        console.error("input type " + type + " not supported");
+        console.error("type '" + this.type + "' not supported");
+      }
+      let defaultProbability = 0;
+
+      let nextIndex = this.inputs.length;
+      let input = new DistributionInput(this.type, defaultValue, defaultProbability);
+      input.onInput(() => {
+        this.values[nextIndex] = input.value;
+        this.probabilities[nextIndex] = input.probability;
+      });
+      this.values.push(defaultValue);
+      this.probabilities.push(defaultProbability);
+      this.inputs.push(input);
+      this.element.append(input.element);
+    }
+
+    remove() {
+      let n = this.inputs.length;
+      if (n != 0) {
+        let last = this.inputs[n-1];
+        this.inputs.pop();
+        last.element.remove();
       }
     }
   }
 
   // A variable in the simulator config
   class Var {
-    constructor(name, displayName, type, input) {
+    constructor(name, input) {
       this.name = name;
-      this.displayName = displayName;
-      this.type = type;
       this.input = input;
     }
   }
@@ -243,25 +212,12 @@ $(document).ready(() => {
   class Period {
     // index = index of this period (for display)
     constructor(index) {
-      this.ndays = new Var("ndays", "Number of days", "number", null);
-      this.rehireRate = new Var("rehire_rate", "Rehire rate", "number", null);
-      this.peopleNewMoney = new Var("people_new_money", "Additional money for people", "distribution-number", null);
-      this.companiesNewMoney = new Var("companies_new_money", "Additional money for companies", "distribution-number", null);
-      this.spending = new Var("spending", "Spending distribution", "distribution-range", null);
-      this.industries = new Var("industries", "Industry distribution", "distribution-text", null);
-
-      let vars = [
-        this.ndays,
-        this.rehireRate,
-        this.peopleNewMoney,
-        this.companiesNewMoney,
-        this.spending,
-        this.industries
-      ];
-
-      for (let i = 0; i < vars.length; i++) {
-        vars[i].input = new Input(vars[i].type, vars[i].displayName);
-      }
+      this.ndays = new Var("ndays", new NumberInput("Number of days", 0));
+      this.rehireRate = new Var("rehire_rate", new NumberInput("Rehire rate", 0));
+      this.peopleNewMoney = new Var("people_new_money", new DistributionInputs("number", "Additional money for people"));
+      this.companiesNewMoney = new Var("companies_new_money", new DistributionInputs("number", "Additional money for companies"));
+      this.spending = new Var("spending", new DistributionInputs("range", "Spending distribution"));
+      this.industries = new Var("industries", new DistributionInputs("text", "Industry distribution"));
 
       this.element = element("div")
         .append(element("label").text("Period " + index))
@@ -315,20 +271,10 @@ $(document).ready(() => {
   // A container for the entire config
   class Config {
     constructor() {
-      this.ncompanies = new Var("ncompanies", "Number of companies", "number", null);
-      this.employees = new Var("employees", "Employee distribution", "distribution-number", null);
-      this.income = new Var("income", "Income distribution", "distribution-number", null);
+      this.ncompanies = new Var("ncompanies", new NumberInput("Number of companies", 0));
+      this.employees = new Var("employees", new DistributionInputs("number", "Employee distribution"));
+      this.income = new Var("income", new DistributionInputs("number", "Income distribution"));
       this.periods = new Periods();
-
-      let vars = [
-        this.ncompanies,
-        this.employees,
-        this.income
-      ];
-
-      for (let i = 0; i < vars.length; i++) {
-        vars[i].input = new Input(vars[i].type, vars[i].displayName);
-      }
 
       this.element = element("div")
         .append(this.ncompanies.input.element)
@@ -342,6 +288,12 @@ $(document).ready(() => {
   // Render the components
   //
 
+  // Title
+  const title = "Economy Simulator";
+  $("title").text(title);
+  $("#title").text(title);
+
+  // Config
   let config = new Config();
   $("#config-container").append(config.element);
 
