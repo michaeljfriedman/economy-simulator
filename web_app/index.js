@@ -123,9 +123,9 @@ $(document).ready(() => {
     }
   }
 
-  // An add/remove button pair for a distribution input. Specify what each
-  // button should do on click.
-  class DistributionButtons {
+  // An add/remove button pair for an input. Specify what each button should do
+  // on click.
+  class AddRemoveButtons {
     constructor(onClickAdd, onClickRemove) {
       let addButton = element("button")
         .text("Add")
@@ -200,7 +200,7 @@ $(document).ready(() => {
           return input;
         };
 
-        let buttons = new DistributionButtons(
+        let buttons = new AddRemoveButtons(
           // The "add" button adds a new DistributionInput
           () => {
             let input = addInput();
@@ -229,10 +229,6 @@ $(document).ready(() => {
     }
   }
 
-  //
-  // Render the components
-  //
-
   // A variable in the simulator config
   class Var {
     constructor(name, displayName, type, input) {
@@ -243,22 +239,111 @@ $(document).ready(() => {
     }
   }
 
-  let vars = [
-    new Var("ncompanies", "Number of companies", "number", null),
-    new Var("employees", "Employee distribution", "distribution-number", null),
-    new Var("income", "Income distribution", "distribution-number", null),
-    new Var("ndays", "Number of days", "number", null),
-    new Var("rehire_rate", "Rehire rate", "number", null),
-    new Var("people_new_money", "Additional money for people", "distribution-number", null),
-    new Var("companies_new_money", "Additional money for companies", "distribution-number", null),
-    new Var("spending", "Spending distribution", "distribution-range", null),
-    new Var("industries", "Industry distribution", "distribution-text", null)
-  ];
+  // A container for the Vars of a single period
+  class Period {
+    // index = index of this period (for display)
+    constructor(index) {
+      this.ndays = new Var("ndays", "Number of days", "number", null);
+      this.rehireRate = new Var("rehire_rate", "Rehire rate", "number", null);
+      this.peopleNewMoney = new Var("people_new_money", "Additional money for people", "distribution-number", null);
+      this.companiesNewMoney = new Var("companies_new_money", "Additional money for companies", "distribution-number", null);
+      this.spending = new Var("spending", "Spending distribution", "distribution-range", null);
+      this.industries = new Var("industries", "Industry distribution", "distribution-text", null);
 
-  for (let i = 0; i < vars.length; i++) {
-    vars[i].input = new Input(vars[i].type, vars[i].displayName);
-    $("#config-container").append(vars[i].input.element);
+      let vars = [
+        this.ndays,
+        this.rehireRate,
+        this.peopleNewMoney,
+        this.companiesNewMoney,
+        this.spending,
+        this.industries
+      ];
+
+      for (let i = 0; i < vars.length; i++) {
+        vars[i].input = new Input(vars[i].type, vars[i].displayName);
+      }
+
+      this.element = element("div")
+        .append(element("label").text("Period " + index))
+        .append(this.ndays.input.element)
+        .append(this.rehireRate.input.element)
+        .append(this.peopleNewMoney.input.element)
+        .append(this.companiesNewMoney.input.element)
+        .append(this.spending.input.element)
+        .append(this.industries.input.element);
+    }
   }
+
+  // A container for all periods
+  class Periods {
+    constructor() {
+      let buttons = new AddRemoveButtons(
+        // The "add" button adds a new period
+        () => {
+          this.add();
+        },
+
+        // The "remove" button removes a period
+        () => {
+          this.remove();
+        }
+      );
+      this.element = element("div")
+        .addClass("form-group")
+        .append(element("label").text("Periods"))
+        .append(buttons.element);
+
+      this.periods = [];
+      this.add();
+    }
+
+    add() {
+      let p = new Period(this.periods.length + 1);
+      this.periods.push(p);
+      this.element.append(p.element);
+    }
+
+    remove() {
+      if (this.periods.length != 0) {
+        let last = this.periods[this.periods.length - 1];
+        this.periods.pop();
+        last.element.remove();
+      }
+    }
+  }
+
+  // A container for the entire config
+  class Config {
+    constructor() {
+      this.ncompanies = new Var("ncompanies", "Number of companies", "number", null);
+      this.employees = new Var("employees", "Employee distribution", "distribution-number", null);
+      this.income = new Var("income", "Income distribution", "distribution-number", null);
+      this.periods = new Periods();
+
+      let vars = [
+        this.ncompanies,
+        this.employees,
+        this.income
+      ];
+
+      for (let i = 0; i < vars.length; i++) {
+        vars[i].input = new Input(vars[i].type, vars[i].displayName);
+      }
+
+      this.element = element("div")
+        .append(this.ncompanies.input.element)
+        .append(this.employees.input.element)
+        .append(this.income.input.element)
+        .append(this.periods.element);
+    }
+  }
+
+  //
+  // Render the components
+  //
+
+  let config = new Config();
+  $("#config-container").append(config.element);
 
   // Chart
   // TODO
