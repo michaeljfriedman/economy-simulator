@@ -4,7 +4,7 @@
 
 $(document).ready(() => {
   //
-  // Populate the page
+  // Define the page components
   //
 
   // Title
@@ -12,52 +12,221 @@ $(document).ready(() => {
   $("title").text(title);
   $("#title").text(title);
 
-  // Make inputs
-  let vars = [
-    {name: "ncompanies", displayName: "Number of companies", type: "number"},
-    {name: "employees", displayName: "Employee distribution", type: "distribution"}
-    // TODO: the rest.
-    // - Use this to make templates and render: https://jinja.palletsprojects.com/en/2.11.x/templates/
-    // - Or use react... but templates may be simpler
-  ];
-  vars.forEach((v) => {
-    let div = $("#" + v.name);
-    // Set label text
-    div.find("label").text(v.displayName);
+  // Creates a new jQuery element
+  let element = function(name) {
+    return $(document.createElement(name));
+  }
 
-    if (v.type == "distribution") {
-      // Update slider label
-      let defaultProb = "0";
-      let label = div.find("span");
-      label.text(defaultProb + "%");
-      div.find(".probability-range")
-        .attr("value", defaultProb)
-        .on("input", (e) => {
-          label.text(e.currentTarget.value + "%");
-        });
+  // An input for a number variable, given its display name and default value.
+  // Also allows you to add an onInput listener.
+  class NumberInput {
+    constructor(displayName, defaultValue) {
+      this.value = defaultValue;
+      this.element = null;
 
-      // Buttons add/remove an input to/from the group
-      div.find(".add-button")
-        .text("Add")
-        .on("click", () => {
-          let distributionInput = div.find(".distribution-input")[0];
-          div.append(distributionInput.cloneNode(true));
-        });
-
-      div.find(".remove-button")
-        .text("Remove")
-        .on("click", () => {
-          let distributionInput = div.find(".distribution-input");
-          distributionInput[distributionInput.length - 1].remove();
-        });
+      let label = element("label")
+        .text(displayName);
+      let input = element("input")
+        .addClass("form-control")
+        .attr("type", "number")
+        .attr("value", this.value.toString());
+      input
+        .on("input", () => {
+          this.value = input[0].valueAsNumber;
+        })
+      
+      this.element = element("div")
+        .append(label)
+        .append(input);
     }
-  });
+
+    onInput(f) {
+      this.element
+        .find("input")
+        .on("input", f);
+    }
+  }
+
+  // An input for one (value, probability) pair in a distribution, given
+  // its name
+  class DistributionInput {
+    constructor(name, defaultValue, defaultProbability) {
+      this.element = element("div");
+      this.value = defaultValue;
+      this.probability = defaultProbability;
+
+      let value = element("input")
+        .addClass("form-control")
+        .attr("value", this.value.toString())
+        .on("input", (e) => {
+          this.value = e.currentTarget.valueAsNumber; // track the value
+        });
+      if (name == "industries") {
+        value = value.attr("type", "text");
+      } else {
+        value = value.attr("type", "number");
+      }
+
+      let probLabel = element("span")
+        .text(this.probability.toString() + "%");
+      let prob = element("input")
+        .attr("type", "range")
+        .attr("value", this.probability.toString())
+        .on("input", (e) => {
+          // Track the probability
+          this.probability = e.currentTarget.valueAsNumber / 100;
+
+          // Update the text label
+          probLabel.text(e.currentTarget.value + "%");
+        });;
+
+      this.element 
+        .append(element("div").addClass("row")
+          .append(element("div").addClass("col")
+            .append(value)
+          ).append(element("div").addClass("col")
+            .append(element("div").addClass("row")
+              .append(prob)
+            ).append(element("div").addClass("row")
+              .append(probLabel)
+            )
+          )
+        );
+    }
+
+    onInput(f) {
+      this.element
+        .find("input")
+        .on("input", f);
+    }
+  }
+
+  // An add/remove button pair for a distribution input. Specify what each
+  // button should do on click.
+  class DistributionButtons {
+    constructor(onClickAdd, onClickRemove) {
+      let addButton = element("button")
+        .text("Add")
+        .on("click", onClickAdd);
+
+      let removeButton = element("button")
+        .text("Remove")
+        .on("click", onClickRemove);
+
+      this.element =
+        element("div").addClass("row")
+          .append(element("div").addClass("col")
+            .append(addButton)
+            .append(removeButton)
+          );
+    }
+  }
+
+  // An input field, given its type, name, and display name. Tracks the value
+  // of the input.
+  class Input {
+    constructor(type, name, displayName) {
+      this.element = null;
+      this.value = null;
+      this.distributionInputs = []; // for type == "distribution" only, an array of DistributionInputs
+
+      // Create the element
+      this.element = element("div")
+        .addClass("form-group");
+
+      // Number input
+      if (type == "number") {
+        this.value = 0;
+        let input = new NumberInput(displayName, this.value);
+        input.onInput(() => {
+          this.value = input.value;
+        });
+        this.element.append(input.element);
+
+      // Distribution input
+      } else if (type == "distribution") {
+        let defaultValue = 0;
+        let defaultProbability = 0;
+        this.value = {
+          values: [],
+          probabilities: []
+        };
+
+        let label = element("label")
+          .text(displayName);
+
+        let addInput = () => {
+          let nextIndex = this.distributionInputs.length;
+          let input = new DistributionInput(name, defaultValue, defaultProbability);
+          input.onInput(() => {
+            this.value.values[nextIndex] = input.value;
+            this.value.probabilities[nextIndex] = input.probability;
+          });
+          this.value.values.push(defaultValue);
+          this.value.probabilities.push(defaultProbability);
+          this.distributionInputs.push(input);
+          return input;
+        };
+
+        let buttons = new DistributionButtons(
+          // The "add" button adds a new DistributionInput
+          () => {
+            let input = addInput();
+            this.element.append(input.element);
+          },
+
+          // The "remove" button removes the last DistributionInput
+          () => {
+            let n = this.distributionInputs.length;
+            if (n != 0) {
+              let last = this.distributionInputs[n-1];
+              this.distributionInputs.pop();
+              last.element.remove();
+            }
+          }
+        );
+
+        let input = addInput();
+
+        this.element.append(label)
+          .append(buttons.element)
+          .append(input.element);
+      } else {
+        console.error("input type " + type + " not supported");
+      }
+    }
+  }
+
+  //
+  // Render the components
+  //
+
+  // A variable in the simulator config
+  class Var {
+    constructor(name, displayName, type, input) {
+      this.name = name;
+      this.displayName = displayName;
+      this.type = type;
+      this.input = input;
+    }
+  }
+
+  let vars = [
+    new Var("ncompanies", "Number of companies", "number", null),
+    new Var("employees", "Employee distribution", "distribution", null)
+    // TODO: the rest
+  ];
+
+  for (let i = 0; i < vars.length; i++) {
+    vars[i].input = new Input(vars[i].type, vars[i].name, vars[i].displayName);
+    $("#config-container").append(vars[i].input.element);
+  }
 
   // Chart
   // TODO
 
   //
-  // Dynamic functionality
+  // Implement the "run" button
   //
 
   // "Run" button sends a hard-coded simulator config to the server and displays
