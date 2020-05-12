@@ -50,21 +50,43 @@ $(document).ready(() => {
   // An input for one (value, probability) pair in a distribution, given
   // its name
   class DistributionInput {
-    constructor(name, defaultValue, defaultProbability) {
+    constructor(type, defaultValue, defaultProbability) {
       this.element = element("div");
-      this.value = defaultValue;
+      this.value = JSON.parse(JSON.stringify(defaultValue)); // copy defaultValue
       this.probability = defaultProbability;
 
-      let value = element("input")
-        .addClass("form-control")
-        .attr("value", this.value.toString())
-        .on("input", (e) => {
-          this.value = e.currentTarget.valueAsNumber; // track the value
+      // Makes a single input element
+      let input = (type, defaultValue, onInput) => {
+        return element("input")
+          .addClass("form-control")
+          .attr("value", defaultValue.toString())
+          .attr("type", type)
+          .on("input", onInput);
+      };
+
+      let value;
+      if (type == "range") {
+        // Make 2 number inputs for the endpoints of the range
+        value = element("div").addClass("row")
+          .append(element("div").addClass("col")
+            .append(input("number", this.value[0], (e) => {
+              this.value[0] = e.currentTarget.valueAsNumber;
+            }))
+          ).append(element("div").addClass("col")
+            .append(input("number", this.value[1], (e) => {
+              this.value[1] = e.currentTarget.valueAsNumber;
+            }))
+          );
+      } else if (type == "number") {
+        value = input("number", this.value, (e) => {
+          this.value = e.currentTarget.valueAsNumber;
         });
-      if (name == "industries") {
-        value = value.attr("type", "text");
+      } else if (type == "text") {
+        value = input("text", this.value, (e) => {
+          this.value = e.currentTarget.value;
+        });
       } else {
-        value = value.attr("type", "number");
+        console.error("type '" + type + "' not supported");
       }
 
       let probLabel = element("span")
@@ -125,7 +147,7 @@ $(document).ready(() => {
   // An input field, given its type, name, and display name. Tracks the value
   // of the input.
   class Input {
-    constructor(type, name, displayName) {
+    constructor(type, displayName) {
       this.element = null;
       this.value = null;
       this.distributionInputs = []; // for type == "distribution" only, an array of DistributionInputs
@@ -144,8 +166,18 @@ $(document).ready(() => {
         this.element.append(input.element);
 
       // Distribution input
-      } else if (type == "distribution") {
-        let defaultValue = 0;
+      } else if (type.startsWith("distribution")) {
+        let subtype = type.substring(type.indexOf("-") + 1);
+        let defaultValue;
+        if (subtype == "number") {
+          defaultValue = 0;
+        } else if (subtype == "text") {
+          defaultValue = "";
+        } else if (subtype == "range") {
+          defaultValue = [0, 0];
+        } else {
+          console.error("subtype '" + subtype + "' not supported");
+        }
         let defaultProbability = 0;
         this.value = {
           values: [],
@@ -157,7 +189,7 @@ $(document).ready(() => {
 
         let addInput = () => {
           let nextIndex = this.distributionInputs.length;
-          let input = new DistributionInput(name, defaultValue, defaultProbability);
+          let input = new DistributionInput(subtype, defaultValue, defaultProbability);
           input.onInput(() => {
             this.value.values[nextIndex] = input.value;
             this.value.probabilities[nextIndex] = input.probability;
@@ -213,12 +245,18 @@ $(document).ready(() => {
 
   let vars = [
     new Var("ncompanies", "Number of companies", "number", null),
-    new Var("employees", "Employee distribution", "distribution", null)
-    // TODO: the rest
+    new Var("employees", "Employee distribution", "distribution-number", null),
+    new Var("income", "Income distribution", "distribution-number", null),
+    new Var("ndays", "Number of days", "number", null),
+    new Var("rehire_rate", "Rehire rate", "number", null),
+    new Var("people_new_money", "Additional money for people", "distribution-number", null),
+    new Var("companies_new_money", "Additional money for companies", "distribution-number", null),
+    new Var("spending", "Spending distribution", "distribution-range", null),
+    new Var("industries", "Industry distribution", "distribution-text", null)
   ];
 
   for (let i = 0; i < vars.length; i++) {
-    vars[i].input = new Input(vars[i].type, vars[i].name, vars[i].displayName);
+    vars[i].input = new Input(vars[i].type, vars[i].displayName);
     $("#config-container").append(vars[i].input.element);
   }
 
