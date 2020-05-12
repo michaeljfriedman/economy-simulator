@@ -12,18 +12,28 @@ $(document).ready(() => {
     return $(document.createElement(name));
   }
 
-  // An input for a number variable, given its display name and default value.
-  // Also allows you to add an onInput listener.
+  // An input for a number variable, given its type (integer or float),
+  // display name and default value.
   class NumberInput {
-    constructor(displayName, defaultValue) {
+    constructor(type, displayName, defaultValue) {
       this.value = defaultValue;
       this.element = null;
 
       let label = element("label")
         .text(displayName);
+
+      let step;
+      if (type == "integer") {
+        step = "1";
+      } else if (type == "float") {
+        step = "0.01";
+      } else {
+        console.error("type '" + type + "' not supported");
+      }
       let input = element("input")
         .addClass("form-control")
         .attr("type", "number")
+        .attr("step", step)
         .attr("value", this.value.toString());
       input
         .on("input", () => {
@@ -39,6 +49,7 @@ $(document).ready(() => {
   // An input for one (value, probability) pair in a distribution, given
   // its name
   class DistributionInput {
+    // type is one of {"integer", "float", "string", "range"}
     constructor(type, defaultValue, defaultProbability) {
       this.element = element("div");
       this.value = JSON.parse(JSON.stringify(defaultValue)); // copy defaultValue
@@ -46,11 +57,22 @@ $(document).ready(() => {
 
       // Makes a single input element
       let input = (type, defaultValue, onInput) => {
-        return element("input")
+        let e = element("input")
           .addClass("form-control")
           .attr("value", defaultValue.toString())
-          .attr("type", type)
           .on("input", onInput);
+
+        if (type == "integer") {
+          e.attr("type", "number").attr("step", "1");
+        } else if (type == "float") {
+          e.attr("type", "number").attr("step", "0.01");
+        } else if (type == "string") {
+          e.attr("type", "text");
+        } else {
+          console.log("type '" + type + "' not supported");
+        }
+
+        return e;
       };
 
       let value;
@@ -58,20 +80,20 @@ $(document).ready(() => {
         // Make 2 number inputs for the endpoints of the range
         value = element("div").addClass("row")
           .append(element("div").addClass("col")
-            .append(input("number", this.value[0], (e) => {
+            .append(input("float", this.value[0], (e) => {
               this.value[0] = e.currentTarget.valueAsNumber;
             }))
           ).append(element("div").addClass("col")
-            .append(input("number", this.value[1], (e) => {
+            .append(input("float", this.value[1], (e) => {
               this.value[1] = e.currentTarget.valueAsNumber;
             }))
           );
-      } else if (type == "number") {
-        value = input("number", this.value, (e) => {
+      } else if (type == "integer" || type == "float") {
+        value = input(type, this.value, (e) => {
           this.value = e.currentTarget.valueAsNumber;
         });
-      } else if (type == "text") {
-        value = input("text", this.value, (e) => {
+      } else if (type == "string") {
+        value = input(type, this.value, (e) => {
           this.value = e.currentTarget.value;
         });
       } else {
@@ -135,6 +157,7 @@ $(document).ready(() => {
 
   // A container for all the inputs in a distribution
   class DistributionInputs {
+    // type is one of the values accepted by DistributionInput
     constructor(type, displayName) {
       this.type = type;
       this.values = [];
@@ -167,9 +190,9 @@ $(document).ready(() => {
     add() {
       // Set default values based on the type
       let defaultValue;
-      if (this.type == "number") {
+      if (this.type == "integer" || this.type == "float") {
         defaultValue = 0;
-      } else if (this.type == "text") {
+      } else if (this.type == "string") {
         defaultValue = "";
       } else if (this.type == "range") {
         defaultValue = [0, 0];
@@ -212,12 +235,12 @@ $(document).ready(() => {
   class Period {
     // index = index of this period (for display)
     constructor(index) {
-      this.ndays = new Var("ndays", new NumberInput("Number of days", 0));
-      this.rehireRate = new Var("rehire_rate", new NumberInput("Rehire rate", 0));
-      this.peopleNewMoney = new Var("people_new_money", new DistributionInputs("number", "Additional money for people"));
-      this.companiesNewMoney = new Var("companies_new_money", new DistributionInputs("number", "Additional money for companies"));
+      this.ndays = new Var("ndays", new NumberInput("integer", "Number of days", 0));
+      this.rehireRate = new Var("rehire_rate", new NumberInput("float", "Rehire rate", 0));
+      this.peopleNewMoney = new Var("people_new_money", new DistributionInputs("integer", "Additional money for people"));
+      this.companiesNewMoney = new Var("companies_new_money", new DistributionInputs("integer", "Additional money for companies"));
       this.spending = new Var("spending", new DistributionInputs("range", "Spending distribution"));
-      this.industries = new Var("industries", new DistributionInputs("text", "Industry distribution"));
+      this.industries = new Var("industries", new DistributionInputs("string", "Industry distribution"));
 
       this.element = element("div")
         .append(element("label").text("Period " + index))
@@ -271,9 +294,9 @@ $(document).ready(() => {
   // A container for the entire config
   class Config {
     constructor() {
-      this.ncompanies = new Var("ncompanies", new NumberInput("Number of companies", 0));
-      this.employees = new Var("employees", new DistributionInputs("number", "Employee distribution"));
-      this.income = new Var("income", new DistributionInputs("number", "Income distribution"));
+      this.ncompanies = new Var("ncompanies", new NumberInput("integer", "Number of companies", 0));
+      this.employees = new Var("employees", new DistributionInputs("integer", "Employee distribution"));
+      this.income = new Var("income", new DistributionInputs("integer", "Income distribution"));
       this.periods = new Periods();
 
       this.element = element("div")
