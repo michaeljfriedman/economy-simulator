@@ -32,6 +32,27 @@ def index_js():
 @sockets.route('/run-simulator')
 def run_simulator(ws):
   config = json.loads(ws.receive())
+
+  # Validate config
+  def replyInvalid(ws):
+    ws.send(json.dumps({'results': 'invalid config'}))
+    ws.close()
+  for _, v in config.items():
+    if v == None:
+      replyInvalid(ws)
+      return
+
+  if len(config['periods']) == 0:
+    replyInvalid(ws)
+    return
+
+  for p in config['periods']:
+    for _, v in p.items():
+      if v == None:
+        replyInvalid(ws)
+        return
+
+  # Run simulator
   def update_progress(period, day, people, companies, results):
     try:
       msg = json.dumps({'results': 'period: %d, day %d' % (period, day)})

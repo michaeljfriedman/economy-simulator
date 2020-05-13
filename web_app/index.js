@@ -307,6 +307,81 @@ $(document).ready(() => {
     }
   }
 
+  // The results chart
+  // TODO: Implement the actual chart. For now, just some text
+  class Chart {
+    constructor() {
+      this.element = element("span");
+    }
+
+    update(s) {
+      this.element.text(s);
+    }
+  }
+
+  // "Run" button sends a the config to the server and displays the results
+  // as it runs
+  class RunButton {
+    constructor(configComponent, chart) {
+      this.element = element("button")
+        .addClass("btn")
+        .addClass("btn-primary")
+        .attr("type", "button")
+        .text("Run")
+        .on("click", () => {
+          let ws = new WebSocket("ws://localhost:8000/run-simulator");
+
+          ws.onopen = (e) => {
+            // Build JSON object of the config
+            let config = {
+              ncompanies: configComponent.ncompanies.input.value,
+              employees: [
+                configComponent.employees.input.values,
+                configComponent.employees.input.probabilities
+              ],
+              income: [
+                configComponent.income.input.values,
+                configComponent.income.input.probabilities
+              ],
+              periods: []
+            };
+
+            for (let i = 0; i < configComponent.periods.periods.length; i++) {
+              let p = configComponent.periods.periods[i];
+              config.periods.push({
+                ndays: p.ndays.input.value,
+                rehire_rate: p.rehireRate.input.value,
+                people_new_money: [
+                  p.peopleNewMoney.input.values,
+                  p.peopleNewMoney.input.probabilities
+                ],
+                companies_new_money: [
+                  p.companiesNewMoney.input.values,
+                  p.companiesNewMoney.input.probabilities
+                ],
+                spending: [
+                  p.spending.input.values,
+                  p.spending.input.probabilities
+                ],
+                industries: [
+                  p.industries.input.values,
+                  p.industries.input.probabilities
+                ]
+              });
+            }
+
+            // Send config to the server
+            ws.send(JSON.stringify(config));
+          };
+
+          ws.onmessage = (e) => {
+            let msg = JSON.parse(e.data);
+            chart.update(JSON.stringify(msg.results));
+          };
+        });
+    }
+  }
+
   //
   // Render the components
   //
@@ -321,59 +396,9 @@ $(document).ready(() => {
   $("#config-container").append(config.element);
 
   // Chart
-  // TODO
+  let chart = new Chart();
+  $("#chart-container").append(chart.element);
 
-  //
-  // Implement the "run" button
-  //
-
-  // "Run" button sends a hard-coded simulator config to the server and displays
-  // the results as it runs
-  $("#run")
-  .text("Run")
-  .on("click", () => {
-    let ws = new WebSocket("ws://localhost:8000/run-simulator");
-
-    ws.onopen = function(event) {
-      config = {
-        "ncompanies": 100,
-        "employees": [
-          [10],
-          [1]
-        ],
-        "income": [
-          [50000],
-          [1]
-        ],
-        "periods": [
-          {
-            "ndays": 720,
-            "rehire_rate": 1.0,
-            "people_new_money": [
-              [1],
-              [1]
-            ],
-            "companies_new_money": [
-              [1],
-              [1]
-            ],
-            "spending": [
-              [[0, 1]],
-              [1]
-            ],
-            "industries": [
-              ["economy"],
-              [1]
-            ]
-          }
-        ]
-      };
-      ws.send(JSON.stringify(config));
-    };
-
-    ws.onmessage = function(event) {
-      msg = JSON.parse(event.data);
-      document.getElementById("results").innerText = JSON.stringify(msg.results);
-    };
-  });
+  // Run button
+  $("#run-button-container").append((new RunButton(config, chart)).element);
 });
