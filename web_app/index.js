@@ -264,6 +264,8 @@ $(document).ready(() => {
       let n = this.inputs.length;
       if (n != 0) {
         let last = this.inputs[n-1];
+        this.values.pop();
+        this.probabilities.pop();
         this.inputs.pop();
         last.element.remove();
       }
@@ -477,38 +479,123 @@ $(document).ready(() => {
     }
   }
 
-  // The results chart
-  // TODO: Implement the actual chart. For now, just some text
-  class Chart {
-    constructor() {
-      this.element = element("span");
+  // A chart of results
+  class ChartComponent {
+    // type = one of {"person_wealth", "company_wealth", "unemployment", "out_of_business"}
+    // industry = one of the industries specified in the config
+    constructor(type, industry) {
+      this.type = type;
+      this.industry = industry;
+      this.element = element("canvas")
+        .attr("width", "400")
+        .attr("height", "400");
+
+      // Initialize the data
+      let datasets = [];
+      if (this.type == "person_wealth" || this.type == "company_wealth") {
+        // Create one dataset per percentile we want to plot
+        let labels = ["Min", "10%", "25%", "50%", "75%", "90%", "Max"];
+        for (let i = 0; i < labels.length; i++) {
+          datasets.push({
+            label: labels[i],
+            data: []
+          });
+        }
+      } else if (this.type == "unemployment" || this.type == "out_of_business") {
+        datasets.push({
+          label: "",
+          data: []
+        });
+      } else {
+        throw Error("type '" + type + "' not supported");
+      }
+
+      // Initialize the chart
+      let titles = {
+        person_wealth: "Distribution of wealth across people",
+        company_wealth: "Distribution of wealth across companies",
+        unemployment: "Unemployment rate",
+        out_of_business: "Percent of companies out of business"
+      }
+      this.chart = new Chart(this.element, {
+        type: "line",
+        data: {
+          labels: [], // days
+          datasets: datasets
+        },
+        options: {
+          title: {
+            display: true,
+            text: titles[this.type]
+          }
+        }
+      });
     }
 
-    update(s) {
-      this.element.text(s);
+    // Update the chart from a json object of results from the server
+    update(results) {
+      let data = results[this.industry][this.type];
+      let numNew = data.length - this.chart.data.labels.length;
+      if (this.type == "person_wealth" || this.type == "company_wealth") {
+        // Extract new data at each percentile we want to plot
+        let percentiles = [0, 10, 25, 50, 75, 90, 100];
+        for (let i = 0; i < percentiles.length; i++) {
+          let p = percentiles[i];
+          for (let day = data.length - numNew; day < data.length; day++) {
+            this.chart.data.labels.push(day);
+            this.chart.data.datasets[i].push(data[day][p]);
+          }
+        }
+      } else {
+        // Add new values to the single dataset
+        for (let day = data.length - numNew; day < data.length; day++) {
+          this.chart.data.labels.push(day);
+          this.chart.data.datasets[0].push(data[day]);
+        }
+      }
     }
   }
 
   // "Run" button sends a the config to the server and displays the results
   // as it runs
   class RunButton {
-    constructor(configComponent, chart) {
+    constructor(config, chartsContainer) {
       this.element = element("button")
         .addClass("btn")
         .addClass("btn-primary")
         .attr("type", "button")
         .text("Run")
         .on("click", () => {
+          // Create charts for each industry in the config
+          let industries = config.periods.periods[0].industries.input.values;
+          let chartTypes = ["person_wealth", "company_wealth", "unemployment", "out_of_business"];
+          let charts = [];
+          let chartsElement = element("div");
+          industries.forEach((industry) => {
+            chartsElement.append(element("h2").text(industry));
+            chartTypes.forEach((type) => {
+              let chart = new ChartComponent(type, industry);
+              charts.push(chart);
+              chartsElement.append(chart.element);
+            });
+          });
+
+          // Render charts
+          chartsContainer.innerHTML = "";
+          chartsContainer.append(chartsElement);
+
+          // Send config to the server, and populate results in the charts
           let ws = new WebSocket("ws://localhost:8000/run-simulator");
 
           ws.onopen = (e) => {
-            // Send config to the server
-            ws.send(JSON.stringify(configComponent.toJSON()));
+            ws.send(JSON.stringify(config.toJSON()));
           };
 
           ws.onmessage = (e) => {
             let msg = JSON.parse(e.data);
-            chart.update(JSON.stringify(msg.results));
+            charts.forEach((chart) => {
+              chart.update(msg.results);
+            });
           };
         });
     }
@@ -567,12 +654,9 @@ $(document).ready(() => {
     }
   }
 
-  // Chart
-  let chart = new Chart();
-  $("#chart-container").append(chart.element);
-
   // Run and share buttons
+  let chartsContainer = $("#charts-container");
   $("#button-container")
-    .append((new RunButton(config, chart)).element)
+    .append((new RunButton(config, chartsContainer)).element)
     .append((new ShareButton(config)).element);
 });

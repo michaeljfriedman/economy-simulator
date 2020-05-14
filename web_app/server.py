@@ -55,7 +55,7 @@ def run_simulator(ws):
   # Run simulator
   def update_progress(period, day, people, companies, results):
     try:
-      msg = json.dumps({'results': 'period: %d, day %d' % (period, day)})
+      msg = json.dumps({'results': results})
       ws.send(msg)
     except Exception:
       pass
