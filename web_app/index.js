@@ -543,26 +543,21 @@ $(document).ready(() => {
       });
     }
 
-    // Update the chart from a json object of results from the server
-    update(results) {
-      let data = results[this.industry][this.type];
-      let numNew = data.length - this.chart.data.labels.length;
+    // Update the chart from a json object of new data from the server
+    update(newData) {
+      let data = newData[this.industry][this.type];
+      let day = this.chart.data.labels.length;
+      this.chart.data.labels.push(day);
       if (this.type == "person_wealth" || this.type == "company_wealth") {
-        // Extract new data at each percentile we want to plot
+        // Add new data at only the percentiles we want to plot
         let percentiles = [0, 10, 25, 50, 75, 90, 100];
-        for (let day = data.length - numNew; day < data.length; day++) {
-          this.chart.data.labels.push(day);
-          for (let i = 0; i < percentiles.length; i++) {
-            let p = percentiles[i];
-            this.chart.data.datasets[i].data.push(data[day][p]);
-          }
+        for (let i = 0; i < percentiles.length; i++) {
+          let p = percentiles[i];
+          this.chart.data.datasets[i].data.push(data[p]);
         }
       } else {
         // Add new values to the single dataset
-        for (let day = data.length - numNew; day < data.length; day++) {
-          this.chart.data.labels.push(day);
-          this.chart.data.datasets[0].data.push(data[day]);
-        }
+        this.chart.data.datasets[0].data.push(data);
       }
       this.chart.update();
     }

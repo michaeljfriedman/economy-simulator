@@ -55,7 +55,12 @@ def run_simulator(ws):
   # Run simulator
   def update_progress(period, day, people, companies, results):
     try:
-      msg = json.dumps({'results': results})
+      today = {}
+      for industry, subresults in results.items():
+        today[industry] = {}
+        for r, data in subresults.items():
+          today[industry][r] = data[day]
+      msg = json.dumps({'results': today})
       ws.send(msg)
     except Exception:
       pass
