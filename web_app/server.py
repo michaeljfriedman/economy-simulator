@@ -66,5 +66,4 @@ def run_simulator(ws):
     periods=config['periods'],
     update_progress=update_progress
   )
-  ws.send(json.dumps({'results': 'done'}))
   ws.close()

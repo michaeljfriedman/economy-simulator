@@ -492,19 +492,30 @@ $(document).ready(() => {
 
       // Initialize the data
       let datasets = [];
+      let red = 50;
+      let green = 150;
+      let blue = 168;
       if (this.type == "person_wealth" || this.type == "company_wealth") {
         // Create one dataset per percentile we want to plot
         let labels = ["Min", "10%", "25%", "50%", "75%", "90%", "Max"];
         for (let i = 0; i < labels.length; i++) {
+          let color = `rgb(${red}, ${green - 20*i}, ${blue})`;
           datasets.push({
             label: labels[i],
-            data: []
+            data: [],
+            fill: false,
+            backgroundColor: color,
+            borderColor: color
           });
         }
       } else if (this.type == "unemployment" || this.type == "out_of_business") {
+        let color = `rgb(${red}, ${green}, ${blue})`;
         datasets.push({
           label: "",
-          data: []
+          data: [],
+          fill: false,
+          backgroundColor: color,
+          borderColor: color
         });
       } else {
         throw Error("type '" + type + "' not supported");
@@ -539,20 +550,21 @@ $(document).ready(() => {
       if (this.type == "person_wealth" || this.type == "company_wealth") {
         // Extract new data at each percentile we want to plot
         let percentiles = [0, 10, 25, 50, 75, 90, 100];
-        for (let i = 0; i < percentiles.length; i++) {
-          let p = percentiles[i];
-          for (let day = data.length - numNew; day < data.length; day++) {
-            this.chart.data.labels.push(day);
-            this.chart.data.datasets[i].push(data[day][p]);
+        for (let day = data.length - numNew; day < data.length; day++) {
+          this.chart.data.labels.push(day);
+          for (let i = 0; i < percentiles.length; i++) {
+            let p = percentiles[i];
+            this.chart.data.datasets[i].data.push(data[day][p]);
           }
         }
       } else {
         // Add new values to the single dataset
         for (let day = data.length - numNew; day < data.length; day++) {
           this.chart.data.labels.push(day);
-          this.chart.data.datasets[0].push(data[day]);
+          this.chart.data.datasets[0].data.push(data[day]);
         }
       }
+      this.chart.update();
     }
   }
 
@@ -581,7 +593,7 @@ $(document).ready(() => {
           });
 
           // Render charts
-          chartsContainer.innerHTML = "";
+          chartsContainer.empty();
           chartsContainer.append(chartsElement);
 
           // Send config to the server, and populate results in the charts
