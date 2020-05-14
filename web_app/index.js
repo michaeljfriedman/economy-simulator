@@ -7,6 +7,10 @@ $(document).ready(() => {
   // Define the page components
   //
 
+  const urlParams = {
+    config: "config"
+  };
+
   // Creates a new jQuery element
   let element = function(name) {
     return $(document.createElement(name));
@@ -44,6 +48,17 @@ $(document).ready(() => {
         .append(label)
         .append(input);
     }
+
+    // Sets the value
+    set(v) {
+      if (v == null || v == undefined) {
+        return false;
+      }
+
+      this.value = v;
+      this.element.find("input")[0].value = v;
+      return true;
+    }
   }
 
   // An input for one (value, probability) pair in a distribution, given
@@ -54,6 +69,7 @@ $(document).ready(() => {
       this.element = element("div");
       this.value = JSON.parse(JSON.stringify(defaultValue)); // copy defaultValue
       this.probability = defaultProbability;
+      this.type = type;
 
       // Makes a single input element
       let input = (type, defaultValue, onInput) => {
@@ -69,14 +85,14 @@ $(document).ready(() => {
         } else if (type == "string") {
           e.attr("type", "text");
         } else {
-          console.log("type '" + type + "' not supported");
+          console.error("type '" + type + "' not supported");
         }
 
         return e;
       };
 
       let value;
-      if (type == "range") {
+      if (this.type == "range") {
         // Make 2 number inputs for the endpoints of the range
         value = element("div").addClass("row")
           .append(element("div").addClass("col")
@@ -88,21 +104,22 @@ $(document).ready(() => {
               this.value[1] = e.currentTarget.valueAsNumber;
             }))
           );
-      } else if (type == "integer" || type == "float") {
-        value = input(type, this.value, (e) => {
+      } else if (this.type == "integer" || this.type == "float") {
+        value = input(this.type, this.value, (e) => {
           this.value = e.currentTarget.valueAsNumber;
         });
-      } else if (type == "string") {
-        value = input(type, this.value, (e) => {
+      } else if (this.type == "string") {
+        value = input(this.type, this.value, (e) => {
           this.value = e.currentTarget.value;
         });
       } else {
-        console.error("type '" + type + "' not supported");
+        console.error("type '" + this.type + "' not supported");
       }
 
       let probLabel = element("span")
-        .text(this.probability.toString() + "%");
+        .text(this.probStr(100 * this.probability));
       let prob = element("input")
+        .addClass("form-control-range")
         .attr("type", "range")
         .attr("value", this.probability.toString())
         .on("input", (e) => {
@@ -110,7 +127,7 @@ $(document).ready(() => {
           this.probability = e.currentTarget.valueAsNumber / 100;
 
           // Update the text label
-          probLabel.text(e.currentTarget.value + "%");
+          probLabel.text(this.probStr(e.currentTarget.value));
         });;
 
       this.element 
@@ -131,6 +148,36 @@ $(document).ready(() => {
       this.element
         .find("input")
         .on("input", f);
+    }
+
+    // Returns the probability string, given the value out of 100
+    probStr(v) {
+      return v.toString() + "%";
+    }
+
+    // Sets the value
+    set(value, probability) {
+      if (value == null || value == undefined || probability == null || probability == undefined) {
+        return false;
+      }
+
+      this.value = JSON.parse(JSON.stringify(value));
+      this.probability = probability;
+      let inputs = this.element.find("input");
+      let label = this.element.find("span");
+      if (this.type == "range") {
+        inputs[0].value = value[0];
+        inputs[1].value = value[1];
+        let p = 100 * probability;
+        inputs[2].value = p;
+        label.text(this.probStr(p))
+      } else {
+        inputs[0].value = value;
+        let p = 100 * probability;
+        inputs[1].value = p;
+        label.text(this.probStr(p));
+      }
+      return true;
     }
   }
 
@@ -221,6 +268,42 @@ $(document).ready(() => {
         last.element.remove();
       }
     }
+
+    // Sets the value
+    set(v) {
+      let copy;
+      try {
+        copy = JSON.parse(JSON.stringify(v));
+      } catch (e) {
+        return false;
+      }
+      if (copy.length != 2) {
+        return false
+      }
+      let values = copy[0];
+      let probabilities = copy[1]
+      if (values.length != probabilities.length) {
+        return false;
+      }
+
+      // Add/remove inputs if necessary to match the given set
+      let diff = Math.abs(values.length - this.values.length);
+      for (let i = 0; i < diff; i++) {
+        if (values.length > this.values.length) {
+          this.add();
+        } else {
+          this.remove();
+        }
+      }
+
+      let success = true;
+      this.values = values;
+      this.probabilities = probabilities;
+      for (let i = 0; i < this.inputs.length; i++) {
+        success &= this.inputs[i].set(this.values[i], this.probabilities[i]);
+      }
+      return success;
+    }
   }
 
   // A variable in the simulator config
@@ -228,6 +311,11 @@ $(document).ready(() => {
     constructor(name, input) {
       this.name = name;
       this.input = input;
+    }
+
+    // Sets the value. Returns true/false if successful
+    set(v) {
+      return this.input.set(v);
     }
   }
 
@@ -250,6 +338,18 @@ $(document).ready(() => {
         .append(this.companiesNewMoney.input.element)
         .append(this.spending.input.element)
         .append(this.industries.input.element);
+    }
+
+    // Sets the value from a JSON object. Returns true/false if successful
+    fromJSON(json) {
+      let success = true;
+      success &= this.ndays.set(json.ndays);
+      success &= this.rehireRate.set(json.rehire_rate);
+      success &= this.peopleNewMoney.set(json.people_new_money);
+      success &= this.companiesNewMoney.set(json.companies_new_money);
+      success &= this.spending.set(json.spending);
+      success &= this.industries.set(json.industries);
+      return success;
     }
   }
 
@@ -289,6 +389,25 @@ $(document).ready(() => {
         last.element.remove();
       }
     }
+
+    // Sets the value from a JSON object. Returns true/false if successful
+    fromJSON(json) {
+      // Add/remove periods if necessary to match the given set
+      let diff = Math.abs(json.length - this.periods.length);
+      for (let i = 0; i < diff; i++) {
+        if (json.length > this.periods.length) {
+          this.add();
+        } else {
+          this.remove();
+        }
+      }
+
+      let success = true;
+      for (let i = 0; i < this.periods.length; i++) {
+        success &= this.periods[i].fromJSON(json[i]);
+      }
+      return success;
+    }
   }
 
   // A container for the entire config
@@ -304,6 +423,57 @@ $(document).ready(() => {
         .append(this.employees.input.element)
         .append(this.income.input.element)
         .append(this.periods.element);
+    }
+
+    toJSON() {
+      let json = {
+        ncompanies: this.ncompanies.input.value,
+        employees: [
+          this.employees.input.values,
+          this.employees.input.probabilities
+        ],
+        income: [
+          this.income.input.values,
+          this.income.input.probabilities
+        ],
+        periods: []
+      };
+
+      for (let i = 0; i < this.periods.periods.length; i++) {
+        let p = this.periods.periods[i];
+        json.periods.push({
+          ndays: p.ndays.input.value,
+          rehire_rate: p.rehireRate.input.value,
+          people_new_money: [
+            p.peopleNewMoney.input.values,
+            p.peopleNewMoney.input.probabilities
+          ],
+          companies_new_money: [
+            p.companiesNewMoney.input.values,
+            p.companiesNewMoney.input.probabilities
+          ],
+          spending: [
+            p.spending.input.values,
+            p.spending.input.probabilities
+          ],
+          industries: [
+            p.industries.input.values,
+            p.industries.input.probabilities
+          ]
+        });
+      }
+
+      return json;
+    }
+
+    // Sets the config from a JSON object. Returns true/false if successful
+    fromJSON(json) {
+      let success = true;
+      success &= this.ncompanies.set(json.ncompanies);
+      success &= this.employees.set(json.employees);
+      success &= this.income.set(json.income);
+      success &= this.periods.fromJSON(json.periods);
+      return success;
     }
   }
 
@@ -332,52 +502,43 @@ $(document).ready(() => {
           let ws = new WebSocket("ws://localhost:8000/run-simulator");
 
           ws.onopen = (e) => {
-            // Build JSON object of the config
-            let config = {
-              ncompanies: configComponent.ncompanies.input.value,
-              employees: [
-                configComponent.employees.input.values,
-                configComponent.employees.input.probabilities
-              ],
-              income: [
-                configComponent.income.input.values,
-                configComponent.income.input.probabilities
-              ],
-              periods: []
-            };
-
-            for (let i = 0; i < configComponent.periods.periods.length; i++) {
-              let p = configComponent.periods.periods[i];
-              config.periods.push({
-                ndays: p.ndays.input.value,
-                rehire_rate: p.rehireRate.input.value,
-                people_new_money: [
-                  p.peopleNewMoney.input.values,
-                  p.peopleNewMoney.input.probabilities
-                ],
-                companies_new_money: [
-                  p.companiesNewMoney.input.values,
-                  p.companiesNewMoney.input.probabilities
-                ],
-                spending: [
-                  p.spending.input.values,
-                  p.spending.input.probabilities
-                ],
-                industries: [
-                  p.industries.input.values,
-                  p.industries.input.probabilities
-                ]
-              });
-            }
-
             // Send config to the server
-            ws.send(JSON.stringify(config));
+            ws.send(JSON.stringify(configComponent.toJSON()));
           };
 
           ws.onmessage = (e) => {
             let msg = JSON.parse(e.data);
             chart.update(JSON.stringify(msg.results));
           };
+        });
+    }
+  }
+
+  // Share button. Generates a link to the site preloaded with the current
+  // config
+  class ShareButton {
+    constructor(config) {
+      this.element = element("button")
+        .addClass("btn")
+        .addClass("btn-secondary")
+        .attr("type", "button")
+        .text("Share")
+        .tooltip({
+          title: "Link copied!",
+          trigger: "manual"
+        });
+      this.element
+        .on("click", () => {
+          // Generate URL and copy it to clipboard
+          let json = JSON.stringify(config.toJSON());
+          let url = (window.location.origin + "?" + urlParams.config + "="
+            + encodeURIComponent(json));
+          navigator.clipboard.writeText(url);
+          this.element.tooltip("show");
+        })
+        .on("blur", () => {
+          // Hide the tooltip when button loses focus
+          this.element.tooltip("hide");
         });
     }
   }
@@ -395,10 +556,23 @@ $(document).ready(() => {
   let config = new Config();
   $("#config-container").append(config.element);
 
+  // Set the initial config values from the URL param, if present
+  let param = (new URLSearchParams(document.location.search)).get(urlParams.config);
+  if (param != null) {
+    try {
+      let givenConfig = JSON.parse(decodeURIComponent(param));
+      config.fromJSON(givenConfig);
+    } catch (e) {
+      console.error("error while parsing URL parameter '" + urlParams.config + "': " + e);
+    }
+  }
+
   // Chart
   let chart = new Chart();
   $("#chart-container").append(chart.element);
 
-  // Run button
-  $("#run-button-container").append((new RunButton(config, chart)).element);
+  // Run and share buttons
+  $("#button-container")
+    .append((new RunButton(config, chart)).element)
+    .append((new ShareButton(config)).element);
 });
