@@ -18,13 +18,13 @@ sockets = flask_sockets.Sockets(app)
 # Returns the index html page
 @app.route('/')
 def index():
-  with open('index.html') as f:
+  with open('web_app/index.html') as f:
     return f.read()
 
 # Returns the index js page
 @app.route('/index.js')
 def index_js():
-  with open('index.js') as f:
+  with open('web_app/index.js') as f:
     return f.read()
 
 # Runs the simulator with the config provided by the client. Sends a simple
