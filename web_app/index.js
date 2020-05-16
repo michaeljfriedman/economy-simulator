@@ -16,6 +16,12 @@ $(document).ready(() => {
     return $(document.createElement(name));
   }
 
+  // Creates a padded conatiner div with the child inside
+  let withPadding = function(child) {
+    return element("div").addClass("py-3").addClass("my-n3")
+      .append(child);
+  };
+
   // An input for a number variable, given its type (integer or float),
   // display name and default value.
   class NumberInput {
@@ -23,7 +29,7 @@ $(document).ready(() => {
       this.value = defaultValue;
       this.element = null;
 
-      let label = element("label")
+      let label = element("h4").addClass("card-title")
         .text(displayName);
 
       let step;
@@ -44,9 +50,13 @@ $(document).ready(() => {
           this.value = input[0].valueAsNumber;
         })
       
-      this.element = element("div")
-        .append(label)
-        .append(input);
+      this.element = withPadding(
+        element("div").addClass("card")
+        .append(element("div").addClass("card-body")
+          .append(label)
+          .append(input)
+        )
+      )
     }
 
     // Sets the value
@@ -66,7 +76,6 @@ $(document).ready(() => {
   class DistributionInput {
     // type is one of {"integer", "float", "string", "range"}
     constructor(type, defaultValue, defaultProbability) {
-      this.element = element("div");
       this.value = JSON.parse(JSON.stringify(defaultValue)); // copy defaultValue
       this.probability = defaultProbability;
       this.type = type;
@@ -130,18 +139,18 @@ $(document).ready(() => {
           probLabel.text(this.probStr(e.currentTarget.value));
         });;
 
-      this.element 
-        .append(element("div").addClass("row")
-          .append(element("div").addClass("col")
-            .append(value)
-          ).append(element("div").addClass("col")
-            .append(element("div").addClass("row")
-              .append(prob)
-            ).append(element("div").addClass("row")
-              .append(probLabel)
-            )
+      this.element = withPadding(
+        element("div").addClass("row")
+        .append(element("div").addClass("col")
+          .append(value)
+        ).append(element("div").addClass("col")
+          .append(element("div").addClass("row")
+            .append(prob)
+          ).append(element("div").addClass("row")
+            .append(probLabel)
           )
-        );
+        )
+      );
     }
 
     onInput(f) {
@@ -186,19 +195,26 @@ $(document).ready(() => {
   class AddRemoveButtons {
     constructor(onClickAdd, onClickRemove) {
       let addButton = element("button")
+        .addClass("btn")
+        .addClass("btn-secondary")
+        .addClass("mr-1")
+        .attr("type", "button")
         .text("Add")
         .on("click", onClickAdd);
 
       let removeButton = element("button")
+        .addClass("btn")
+        .addClass("btn-secondary")
+        .addClass("mr-1")
+        .attr("type", "button")
         .text("Remove")
         .on("click", onClickRemove);
 
-      this.element =
-        element("div").addClass("row")
-          .append(element("div").addClass("col")
-            .append(addButton)
-            .append(removeButton)
-          );
+      this.element = withPadding(
+        element("div")
+          .append(addButton)
+          .append(removeButton)
+      );
     }
   }
 
@@ -212,7 +228,7 @@ $(document).ready(() => {
       this.inputs = []; // array of DistributionInput
 
       // Create the element
-      let label = element("label")
+      let label = element("h4").addClass("card-title")
         .text(displayName);
 
       let buttons = new AddRemoveButtons(
@@ -227,9 +243,13 @@ $(document).ready(() => {
         }
       );
 
-      this.element = element("div").addClass("form-group")
-        .append(label)
-        .append(buttons.element);
+      this.element = withPadding(
+        element("div").addClass("card")
+            .append(element("div").addClass("card-body")
+                .append(label)
+                .append(buttons.element)
+              )
+      );
 
       this.add();
     }
@@ -257,7 +277,7 @@ $(document).ready(() => {
       this.values.push(defaultValue);
       this.probabilities.push(defaultProbability);
       this.inputs.push(input);
-      this.element.append(input.element);
+      $(this.element.find(".card-body")[0]).append(input.element);
     }
 
     remove() {
@@ -332,14 +352,18 @@ $(document).ready(() => {
       this.spending = new Var("spending", new DistributionInputs("range", "Spending distribution"));
       this.industries = new Var("industries", new DistributionInputs("string", "Industry distribution"));
 
-      this.element = element("div")
-        .append(element("label").text("Period " + index))
-        .append(this.ndays.input.element)
-        .append(this.rehireRate.input.element)
-        .append(this.peopleNewMoney.input.element)
-        .append(this.companiesNewMoney.input.element)
-        .append(this.spending.input.element)
-        .append(this.industries.input.element);
+      this.element = withPadding(
+        element("div").addClass("card")
+        .append(element("div").addClass("card-body")
+          .append(element("h3").addClass("card-title").text("Period " + index))
+          .append(this.ndays.input.element)
+          .append(this.rehireRate.input.element)
+          .append(this.peopleNewMoney.input.element)
+          .append(this.companiesNewMoney.input.element)
+          .append(this.spending.input.element)
+          .append(this.industries.input.element)
+        )
+      );
     }
 
     // Sets the value from a JSON object. Returns true/false if successful
@@ -369,10 +393,13 @@ $(document).ready(() => {
           this.remove();
         }
       );
-      this.element = element("div")
-        .addClass("form-group")
-        .append(element("label").text("Periods"))
-        .append(buttons.element);
+      this.element = withPadding(
+        element("div").addClass("card").addClass("border-0")
+        .append(element("div").addClass("card-body")
+          .append(element("h2").addClass("card-title").text("Periods"))
+          .append(buttons.element)
+        )
+      );
 
       this.periods = [];
       this.add();
@@ -381,7 +408,7 @@ $(document).ready(() => {
     add() {
       let p = new Period(this.periods.length + 1);
       this.periods.push(p);
-      this.element.append(p.element);
+      $(this.element.find(".card-body")[0]).append(p.element);
     }
 
     remove() {
@@ -421,9 +448,15 @@ $(document).ready(() => {
       this.periods = new Periods();
 
       this.element = element("div")
-        .append(this.ncompanies.input.element)
-        .append(this.employees.input.element)
-        .append(this.income.input.element)
+        .append(withPadding(
+          element("div").addClass("card").addClass("border-0")
+          .append(element("div").addClass("card-body")
+            .append(element("h2").addClass("card-title").text("Base Parameters"))
+            .append(this.ncompanies.input.element)
+            .append(this.employees.input.element)
+            .append(this.income.input.element)
+          )
+        ))
         .append(this.periods.element);
     }
 
@@ -575,6 +608,8 @@ $(document).ready(() => {
       this.element = element("button")
         .addClass("btn")
         .addClass("btn-primary")
+        .addClass("btn-lg")
+        .addClass("mr-1")
         .attr("type", "button")
         .text("Run")
         .on("click", () => {
@@ -614,9 +649,14 @@ $(document).ready(() => {
               null
             )
           ];
-          let chartsElement = element("div");
+          let chartsElement = withPadding(
+            element("div").addClass("card").addClass("border-0")
+            .append(element("div").addClass("card-body")
+              .append(element("h2").addClass("card-title").text("Results"))
+            )
+          );
           industries.forEach((industry) => {
-            chartsElement.append(element("h2").text(industry));
+            $(chartsElement.find(".card-body")[0]).append(element("h3").text(industry));
             charts.forEach((chart) => {
               let chartComponent = new ChartComponent(chart.displayName, chart.legend, chart.xLabel, chart.yLabel);
               chart.chartComponents.push(chartComponent);
@@ -676,6 +716,8 @@ $(document).ready(() => {
       this.element = element("button")
         .addClass("btn")
         .addClass("btn-secondary")
+        .addClass("btn-lg")
+        .addClass("mr-1")
         .attr("type", "button")
         .text("Share")
         .tooltip({
@@ -705,7 +747,12 @@ $(document).ready(() => {
   // Title
   const title = "Economy Simulator";
   $("title").text(title);
-  $("#title").text(title);
+  $("#title-container")
+  .append(
+    withPadding(
+      element("h1").text(title)
+    )
+  );
 
   // Config
   let config = new Config();
@@ -725,6 +772,11 @@ $(document).ready(() => {
   // Run and share buttons
   let chartsContainer = $("#charts-container");
   $("#button-container")
-    .append((new RunButton(config, chartsContainer)).element)
-    .append((new ShareButton(config)).element);
+  .append(
+    withPadding(
+      element("div")
+      .append((new RunButton(config, chartsContainer)).element)
+      .append((new ShareButton(config)).element)
+    )
+  );
 });
