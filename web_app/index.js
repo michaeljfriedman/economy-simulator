@@ -481,11 +481,10 @@ $(document).ready(() => {
 
   // A chart of results
   class ChartComponent {
-    // type = one of {"person_wealth", "company_wealth", "unemployment", "out_of_business"}
-    // industry = one of the industries specified in the config
-    constructor(type, industry) {
-      this.type = type;
-      this.industry = industry;
+    // title = the title of the graph
+    // legend = a list of labels for each line in the graph, shown in the legend
+    // {x,y}Label = the label for each axis
+    constructor(title, legend, xLabel, yLabel) {
       this.element = element("canvas")
         .attr("width", "400")
         .attr("height", "400");
@@ -495,71 +494,77 @@ $(document).ready(() => {
       let red = 50;
       let green = 150;
       let blue = 168;
-      if (this.type == "person_wealth" || this.type == "company_wealth") {
-        // Create one dataset per percentile we want to plot
-        let labels = ["Min", "10%", "25%", "50%", "75%", "90%", "Max"];
-        for (let i = 0; i < labels.length; i++) {
-          let color = `rgb(${red}, ${green - 20*i}, ${blue})`;
-          datasets.push({
-            label: labels[i],
-            data: [],
-            fill: false,
-            backgroundColor: color,
-            borderColor: color
-          });
-        }
-      } else if (this.type == "unemployment" || this.type == "out_of_business") {
-        let color = `rgb(${red}, ${green}, ${blue})`;
+      for (let i = 0; i < legend.length; i++) {
+        let color = `rgb(${red}, ${green - 20*i}, ${blue})`;
         datasets.push({
-          label: "",
+          label: legend[i],
           data: [],
           fill: false,
           backgroundColor: color,
           borderColor: color
         });
-      } else {
-        throw Error("type '" + type + "' not supported");
       }
 
       // Initialize the chart
-      let titles = {
-        person_wealth: "Distribution of wealth across people",
-        company_wealth: "Distribution of wealth across companies",
-        unemployment: "Unemployment rate",
-        out_of_business: "Percent of companies out of business"
-      }
       this.chart = new Chart(this.element, {
         type: "line",
         data: {
-          labels: [], // days
-          datasets: datasets
+          labels: [], // x axis
+          datasets: datasets // y axis, one dataset for each line
         },
         options: {
           title: {
             display: true,
-            text: titles[this.type]
+            text: title
+          },
+          scales: {
+            yAxes: [{
+              scaleLabel: {
+                display: true,
+                labelString: yLabel
+              }
+            }],
+            xAxes: [{
+              scaleLabel: {
+                display: true,
+                labelString: xLabel
+              }
+            }]
           }
         }
       });
     }
 
-    // Update the chart from a json object of new data from the server
+    // Add a new data point to the chart. newData is an array, where each entry
+    // i is the new value for legend[i]
     update(newData) {
-      let data = newData[this.industry][this.type];
-      let day = this.chart.data.labels.length;
-      this.chart.data.labels.push(day);
-      if (this.type == "person_wealth" || this.type == "company_wealth") {
-        // Add new data at only the percentiles we want to plot
-        let percentiles = [0, 10, 25, 50, 75, 90, 100];
-        for (let i = 0; i < percentiles.length; i++) {
-          let p = percentiles[i];
-          this.chart.data.datasets[i].data.push(data[p]);
-        }
-      } else {
-        // Add new values to the single dataset
-        this.chart.data.datasets[0].data.push(data);
+      let x = this.chart.data.labels.length;
+      this.chart.data.labels.push(x);
+      for (let i = 0; i < newData.length; i++) {
+        this.chart.data.datasets[i].data.push(newData[i]);
       }
       this.chart.update();
+    }
+  }
+
+  // Container for all of the charts of a particular statistic (e.g. person
+  // wealth, company wealth), across all industries
+  class Statistic {
+    // name = one of {person_wealth, company_wealth, unemployment, out_of_business}
+    // displayName, {x,y}Label, legend = the title, {x,y}Label, and legend of the ChartComponent
+    // yIndices = when the server provides an array of values for this statistic (e.g. person wealth),
+    //   specify an array of indices to plot. Otherwise (e.g. unemployment), set this to null
+    constructor(name, displayName, xLabel, yLabel, legend, yIndices) {
+      this.name = name;
+      this.displayName = displayName;
+      this.xLabel = xLabel;
+      this.yLabel = yLabel;
+      this.legend = legend;
+      this.yIndices = yIndices;
+
+      // Parallel arrays - the ChartComponent for each industry
+      this.chartComponents = [];
+      this.industries = [];
     }
   }
 
@@ -575,21 +580,55 @@ $(document).ready(() => {
         .on("click", () => {
           // Create charts for each industry in the config
           let industries = config.periods.periods[0].industries.input.values;
-          let chartTypes = ["person_wealth", "company_wealth", "unemployment", "out_of_business"];
-          let charts = [];
+          let charts = [
+            new Statistic(
+              "person_wealth",
+              "Distribution of wealth across people",
+              "Days",
+              "Dollars",
+              ["Min", "10%", "25%", "50%", "75%", "90%", "Max"],
+              [0, 10, 25, 50, 75, 90, 100]
+            ),
+            new Statistic(
+              "company_wealth",
+              "Distribution of wealth across companies",
+              "Days",
+              "Dollars",
+              ["Min", "10%", "25%", "50%", "75%", "90%", "Max"],
+              [0, 10, 25, 50, 75, 90, 100]
+            ),
+            new Statistic(
+              "unemployment",
+              "Unemployment rate",
+              "Days",
+              "Rate",
+              [""],
+              null
+            ),
+            new Statistic(
+              "out_of_business",
+              "Fraction of companies out of business",
+              "Days",
+              "Fraction",
+              [""],
+              null
+            )
+          ];
           let chartsElement = element("div");
           industries.forEach((industry) => {
             chartsElement.append(element("h2").text(industry));
-            chartTypes.forEach((type) => {
-              let chart = new ChartComponent(type, industry);
-              charts.push(chart);
-              chartsElement.append(chart.element);
+            charts.forEach((chart) => {
+              let chartComponent = new ChartComponent(chart.displayName, chart.legend, chart.xLabel, chart.yLabel);
+              chart.chartComponents.push(chartComponent);
+              chart.industries.push(industry);
+              chartsElement.append(chartComponent.element);
             });
           });
 
           // Render charts
           chartsContainer.empty();
           chartsContainer.append(chartsElement);
+
 
           // Send config to the server, and populate results in the charts
           let ws = new WebSocket("ws://localhost:8000/run-simulator");
@@ -600,8 +639,25 @@ $(document).ready(() => {
 
           ws.onmessage = (e) => {
             let msg = JSON.parse(e.data);
+
+            // Add the new data to each chart
             charts.forEach((chart) => {
-              chart.update(msg.results);
+              for (let i = 0; i < chart.chartComponents.length; i++) {
+                let industry = chart.industries[i];
+                let data = msg.results[industry][chart.name];
+
+                // Extract only the y indices in the plot
+                let newData = [];
+                if (chart.yIndices != null) {
+                  chart.yIndices.forEach((idx) => {
+                    newData.push(data[idx]);
+                  });
+                } else {
+                  newData.push(data);
+                }
+
+                chart.chartComponents[i].update(newData);
+              }
             });
           };
         });
