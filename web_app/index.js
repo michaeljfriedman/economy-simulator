@@ -584,7 +584,7 @@ $(document).ready(() => {
             new Statistic(
               "person_wealth",
               "Distribution of wealth across people",
-              "Days",
+              "Months",
               "Dollars",
               ["Min", "10%", "25%", "50%", "75%", "90%", "Max"],
               [0, 10, 25, 50, 75, 90, 100]
@@ -592,7 +592,7 @@ $(document).ready(() => {
             new Statistic(
               "company_wealth",
               "Distribution of wealth across companies",
-              "Days",
+              "Months",
               "Dollars",
               ["Min", "10%", "25%", "50%", "75%", "90%", "Max"],
               [0, 10, 25, 50, 75, 90, 100]
@@ -600,7 +600,7 @@ $(document).ready(() => {
             new Statistic(
               "unemployment",
               "Unemployment rate",
-              "Days",
+              "Months",
               "Rate",
               [""],
               null
@@ -608,7 +608,7 @@ $(document).ready(() => {
             new Statistic(
               "out_of_business",
               "Fraction of companies out of business",
-              "Days",
+              "Months",
               "Fraction",
               [""],
               null
@@ -639,6 +639,11 @@ $(document).ready(() => {
 
           ws.onmessage = (e) => {
             let msg = JSON.parse(e.data);
+
+            // Only plot the first day of each month
+            if (msg.day != 0 && msg.day % 30 != 1) {
+              return;
+            }
 
             // Add the new data to each chart
             charts.forEach((chart) => {

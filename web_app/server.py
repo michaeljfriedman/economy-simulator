@@ -60,7 +60,7 @@ def run_simulator(ws):
         today[industry] = {}
         for r, data in subresults.items():
           today[industry][r] = data[day]
-      msg = json.dumps({'results': today})
+      msg = json.dumps({'results': today, 'period': period, 'day': day})
       ws.send(msg)
     except Exception:
       pass
