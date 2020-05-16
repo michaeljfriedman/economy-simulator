@@ -73,7 +73,10 @@ Vagrant.configure("2") do |config|
     # Set up git
     git config --global auto.crlf false
 
+    # Install heroku
+    sudo snap install --classic heroku
+
     # Install deps
-    pip install argparse numpy matplotlib tqdm Flask Flask-Sockets gunicorn
+    pip install -r requirements.txt
   SHELL
 end

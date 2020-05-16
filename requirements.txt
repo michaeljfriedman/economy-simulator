@@ -1,0 +1,7 @@
+argparse
+numpy
+matplotlib
+tqdm
+Flask
+Flask-Sockets
+gunicorn
