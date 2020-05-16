@@ -671,7 +671,8 @@ $(document).ready(() => {
 
 
           // Send config to the server, and populate results in the charts
-          let ws = new WebSocket(`ws://${document.location.hostname}/run-simulator`);
+          let protocol = (document.location.protocol == "https:") ? "wss:" : "ws:";
+          let ws = new WebSocket(`${protocol}//${document.location.host}/run-simulator`);
 
           ws.onopen = (e) => {
             ws.send(JSON.stringify(config.toJSON()));
