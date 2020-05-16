@@ -6,7 +6,7 @@ the unemployment rate, and the company survival rate, when you vary certain
 parameters.
 
 This README covers how the simulation is designed and how to run it. For
-development details, see the [developer guide](dev_guide.md).
+development details, see the [developer guide](docs/dev_guide.md).
 
 ## Design
 

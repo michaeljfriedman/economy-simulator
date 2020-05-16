@@ -52,7 +52,7 @@ in the docs/ subdirectory.
 ## Simulator
 
 simulator.py implements the algorithm described in the
-[README](README.md#simulation-algorithm), breaking out individual functions
+[README](../README.md#simulation-algorithm), breaking out individual functions
 for different parts. Each of the functions has corresponding unit tests in
 test.py.
 
@@ -66,7 +66,7 @@ The CLI has two parts: an executable app (main.py) and a plotting program
 (plot.py). Running the main produces an directory with output data from the
 simulation. Within this directory, there's one subdirectory for each industry,
 and within that, one csv file for each metric described in the
-[README](README.md#outputs). Running the plotter will produce plots of each of
+[README](../README.md#outputs). Running the plotter will produce plots of each of
 theses metrics.
 
 > Note that the csv actually contains all of the raw results from the simulator,
@@ -80,7 +80,7 @@ specified as 2 parallel arrays in a 2d array: the first lists the values, and
 the second lists the probability that each value is selected. For example,
 in the example config below, the `employees` distribution sets that each
 company has a 50% chance of being assigned 10 employees, and a 50% chance of 20.
-The parameters are listed in the same order as in the [README](README.md#inputs).
+The parameters are listed in the same order as in the [README](../README.md#inputs).
 
 Base parameters:
 
