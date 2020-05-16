@@ -9,13 +9,12 @@ Example:
 python main.py --config=config.json --output=output
 '''
 
+from simulator import simulator
+from tqdm import tqdm
 import argparse
 import csv
 import json
-import matplotlib.pyplot as plt
-import numpy as np
 import os
-import simulator
 import sys
 
 def main(argv):
@@ -30,12 +29,18 @@ def main(argv):
     config = json.loads(f.read())
 
   # Run simulator
+  total_ndays = sum([config['periods'][i]['ndays'] for i in range(len(config['periods']))])
+  t = tqdm(total=total_ndays)
+  def update_progress(period, day, people, companies, results):
+    t.update()
   results = simulator.run(
     ncompanies=config['ncompanies'],
     employees=config['employees'],
     income=config['income'],
-    periods=config['periods']
+    periods=config['periods'],
+    update_progress=update_progress
   )
+  t.close()
 
   # Write results
   for ind, ind_results in results.items():

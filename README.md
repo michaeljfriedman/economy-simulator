@@ -6,8 +6,7 @@ the unemployment rate, and the company survival rate, when you vary certain
 parameters.
 
 This README covers how to set up your environment to work on the project or run
-the simulation. For details on how the simulation works, see the
-[design page](design.md).
+the simulation. For details on how the simulator works, see the [docs](docs/).
 
 ## Getting Started
 
@@ -29,11 +28,12 @@ cd /vagrant
 ```
 
 To run the simulation, you'll need to write a config file that sets its
-parameters. See the [design page](design.md) for the config spec and an example
-that you can copy/paste into a file, e.g. config.json. Then you can run the
-simulation:
+parameters. See the [design page](docs/design.md) for the config spec and an
+example that you can copy/paste into a file, e.g. config.json. Then you can run
+the simulation:
 
 ```bash
+cd cli
 python main.py --config=config.json --output=output/
 ```
 
