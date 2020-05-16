@@ -212,8 +212,8 @@ $(document).ready(() => {
 
       this.element = withPadding(
         element("div")
-          .append(addButton)
-          .append(removeButton)
+        .append(addButton)
+        .append(removeButton)
       );
     }
   }
@@ -245,10 +245,10 @@ $(document).ready(() => {
 
       this.element = withPadding(
         element("div").addClass("card")
-            .append(element("div").addClass("card-body")
-                .append(label)
-                .append(buttons.element)
-              )
+        .append(element("div").addClass("card-body")
+          .append(label)
+          .append(buttons.element)
+        )
       );
 
       this.add();
@@ -709,9 +709,9 @@ $(document).ready(() => {
     }
   }
 
-  // Share button. Generates a link to the site preloaded with the current
+  // "Get link" button. Generates a link to the site preloaded with the current
   // config
-  class ShareButton {
+  class GetLinkButton {
     constructor(config) {
       this.element = element("button")
         .addClass("btn")
@@ -719,7 +719,7 @@ $(document).ready(() => {
         .addClass("btn-lg")
         .addClass("mr-1")
         .attr("type", "button")
-        .text("Share")
+        .text("Get Link")
         .tooltip({
           title: "Link copied!",
           trigger: "manual"
@@ -769,14 +769,14 @@ $(document).ready(() => {
     }
   }
 
-  // Run and share buttons
+  // Run and "get link" buttons
   let chartsContainer = $("#charts-container");
   $("#button-container")
   .append(
     withPadding(
       element("div")
       .append((new RunButton(config, chartsContainer)).element)
-      .append((new ShareButton(config)).element)
+      .append((new GetLinkButton(config)).element)
     )
   );
 });
