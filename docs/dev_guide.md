@@ -57,13 +57,13 @@ for different parts. Each of the functions has corresponding unit tests in
 test.py.
 
 The simulator outputs the results in a dict, as described in the header comment
-of the run() function. (Note that this actually contains more data than what's
+of the `run()` function. (Note that this actually contains more data than what's
 plotted in the CLI and web app.)
 
 ## CLI
 
 The CLI has two parts: an executable app (main.py) and a plotting program
-(plot.py). Running the main produces an directory with output data from the
+(plot.py). Running the main produces a directory with output data from the
 simulation. Within this directory, there's one subdirectory for each industry,
 and within that, one csv file for each metric described in the
 [README](../README.md#outputs). Running the plotter will produce plots of each of
@@ -90,9 +90,7 @@ Base parameters:
 
 Periods:
 
-- `periods` (array): an array of periods as specified below. If a parameter is
-  not set in a particular period, the value from the previous period is used
-  (but all values must be set in the first period):
+- `periods` (array): an array of periods as specified below:
   - `ndays` (int)
   - `rehire_rate` (float)
   - `people_new_money` (distribution)

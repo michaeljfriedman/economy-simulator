@@ -70,7 +70,7 @@ simulations with different variables.
 
 The simulation lets you specify a number of parameters for the economy. Some of
 these are distributions, which specify *values* and a corresponding
-*probability* of that value being selected. First you need to set the base
+*probability* of that each value is selected. First you need to set the base
 parameters, which apply for the entire simulation:
 
 - **Number of companies**
@@ -82,7 +82,9 @@ parameters, which apply for the entire simulation:
   month.
 
 Then you specify a number of *periods* - a limited period of time during which
-certain parameters apply. The periods run in order, and each has:
+certain parameters apply. The periods run in order, and each has the following
+parameters. If a parameter is not set in a particular period, the previous
+value is used - but all parameters must be set in the first period.
 
 - **Number of days**: the duration of the period
 - **Rehire rate**: the probability that an unemployed person is rehired when an
@@ -111,7 +113,7 @@ certain parameters apply. The periods run in order, and each has:
 
 The web app has boxes where you can set each of these parameters. For the CLI,
 you'll need to write a config file that sets these parameters. See the
-[developer guide](docs/dev_guide.md#cli) for the spec of the config and an
+[developer guide](docs/dev_guide.md#config) for the spec of the config and an
 example that you can copy/paste into a file, e.g. config.json. Then you can run
 the simulation with:
 
