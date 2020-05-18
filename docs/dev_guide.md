@@ -56,45 +56,46 @@ simulator.py implements the algorithm described in the
 for different parts. Each of the functions has corresponding unit tests in
 test.py.
 
-The simulator outputs the results in a dict, as described in the header comment
-of the `run()` function. (Note that this actually contains more data than what's
-plotted in the CLI and web app.)
+The simulator just runs the simulation and tracks the model, but doesn't report
+any results itself. To get results, clients of the simulator can pass a callback
+function `on_eod`, which is called at the end of each day. This function can be
+used to track progress and/or record data for reporting later.
 
 ## CLI
 
 The CLI has two parts: an executable app (main.py) and a plotting program
 (plot.py). Running the main produces a directory with output data from the
-simulation. Within this directory, there's one subdirectory for each industry,
-and within that, one csv file for each metric described in the
-[README](../README.md#outputs). Running the plotter will produce plots of each of
-theses metrics.
+simulation (the data files produced are described in the header comment of
+main.py). The plotter processes the data to produce plots of each of the metrics
+described in the [README](../README.md#outputs).
 
-> Note that the csv actually contains all of the raw results from the simulator,
-not just the ones plotted. So you could perform additional analysis on the raw
-results if you want.
+> Note that the data files produced by main.py actually contain all of the raw
+results from the simulator, not just the ones plotted. So you could perform
+additional analysis on the raw results if you want.
 
 ### Config
 
 The config is a JSON object with the following parameters. Distributions are
 specified as 2 parallel arrays in a 2d array: the first lists the values, and
 the second lists the probability that each value is selected. For example,
-in the example config below, the `employees` distribution sets that each
-company has a 50% chance of being assigned 10 employees, and a 50% chance of 20.
-The parameters are listed in the same order as in the [README](../README.md#inputs).
+in the example config below, the `income` distribution specifies that each
+person has an equal 25% chance of being assigned to any of the income levels
+($25k, $65k, $100k, and $250k). The parameters are listed in the same order as
+in the [README](../README.md#inputs).
 
 Base parameters:
 
 - `ncompanies` (int)
-- `employees` (distribution)
 - `income` (distribution)
+- `company_size` (distribution)
 
 Periods:
 
 - `periods` (array): an array of periods as specified below:
-  - `ndays` (int)
+  - `duration` (int)
+  - `person_stimulus` (float)
+  - `company_stimulus` (float)
   - `rehire_rate` (float)
-  - `people_new_money` (distribution)
-  - `companies_new_money` (distribution)
   - `spending` (distribution). As another example, a uniform distribution over
     [0, 1] would be represented as:
 
@@ -112,26 +113,20 @@ Example:
 ```json
 {
   "ncompanies": 100,
-  "employees": [
-    [10, 20],
-    [0.5, 0.5]
-  ],
   "income": [
     [25000, 65000, 100000, 250000],
     [0.25, 0.25, 0.25, 0.25]
   ],
+  "company_size": [
+    [10, 20],
+    [0.5, 0.5]
+  ],
   "periods": [
     {
-      "ndays": 360,
+      "duartion": 360,
+      "person_stimulus": 1.0,
+      "company_stimulus": 1.0,
       "rehire_rate": 1.0,
-      "people_new_money": [
-        [1, 2],
-        [0.5, 0.5]
-      ],
-      "companies_new_money": [
-        [1, 2],
-        [0.5, 0.5]
-      ],
       "spending": [
         [[0, 0.5], [0.5, 1]],
         [0.25, 0.75]
@@ -155,7 +150,7 @@ The WebSocket is used to maintain a connection so that the server can send live
 updates as the simulator runs. Once a connection to the WebSocket is opened, the
 client (index.js) sends the config from the frontend to the server (server.py),
 and the server parses it and starts the simulator, sending live updates back to
-the client each day using the simulator's `update_progress` callback.
+the client each day using the simulator's `on_eod` callback.
 
 The frontend (index.{html, js}) is implemented with jQuery. A different class
 is defined for each component (e.g. a card), which tracks the inputs and the

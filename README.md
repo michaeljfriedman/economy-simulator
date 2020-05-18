@@ -44,8 +44,8 @@ Initialization:
   from a distribution
 - Each person is assigned income and an initial spending rate for the first
   month, both from a distribution
-- Both people and companies get some number of months' worth of money (income
-  for people, payroll for companies), chosen from a distribution
+- Both people and companies get some months' worth of money (income for people,
+  payroll for companies), chosen from a distribution
 
 Each day:
 
@@ -70,32 +70,32 @@ simulations with different variables.
 
 The simulation lets you specify a number of parameters for the economy. Some of
 these are distributions, which specify *values* and a corresponding
-*probability* of that each value is selected. First you need to set the base
+*probability* that each value is selected. First you need to set the base
 parameters, which apply for the entire simulation:
 
 - **Number of companies**
-- **Employee distribution**: a distribution of how many employees are assigned to
-  companies. For example, you could say there's a 50% chance of a company
-  having 10 employees, and 50% chance of 20.
-- **Income distribution**: a distribution of people's annual income. Each
+- **Income levels**: a distribution of people's annual income. Each
   employed person receives an equal portion (1/12) of their annual income each
   month.
+- **Company size**: a distribution of companies' size (the number of employees
+  they have). For example, you could say that 1/3 of companies have 100
+  employees, and 1/3 have 1,000, and 1/3 have 10,000.
 
-Then you specify a number of *periods* - a limited period of time during which
-certain parameters apply. The periods run in order, and each has the following
-parameters. If a parameter is not set in a particular period, the previous
-value is used - but all parameters must be set in the first period.
+Then you specify a number of *periods* - a limited duration for which certain
+parameters apply. The periods run in the order listed, and each has the
+following parameters. All parameters must be set in the first period, but after
+that, if a parameter is not set in a particular period, the previous
+value is used.
 
-- **Number of days**: the duration of the period
+- **Duration**: the duration of the period, in days
+- **Stimulus for people**: the fraction of each person's monthly income that's
+  granted to them as "stimulus" for this period. In the first period, this is
+  the amount of money people will start the simulation with (e.g. 1 month's
+  income), and in later periods, this can simulate stimulus checks.
+- **Stimulus for companies**: analogous number for companies, as a fraction of
+  monthly payroll.
 - **Rehire rate**: the probability that an unemployed person is rehired when an
   opening comes up.
-- **Additional money for people**: the distribution of additional money people
-  get at the start of this period, specified in months of income. In the first
-  period, this is the amount of money people will start the simulation with
-  (e.g. 100% of people receive 1 month's income), and in later periods, this
-  can simulate "stimulus checks".
-- **Additional money for companies**: analogous distribution for companies,
-  specified in months of payroll.
 - **Spending distribution**: the distribution of people's spending rates. Each
   month, every person picks a spending rate (a fraction of their money) from
   this distribution, and spends that much in that month. Each value should be
@@ -126,23 +126,25 @@ This will produce a bunch of metrics in the output/ directory. You can plot
 them with:
 
 ```bash
-python plot.py --data-directory=output/ --output=plot.png
+python plot.py --directory=output/
 ```
 
 Use the `--help` flag for more details on command-line options.
 
 ### Outputs
 
-Running a simulation produces 4 charts for each industry, with one data point
-at the beginning of each month:
+Running a simulation produces 4 main charts:
 
-- Distribution of wealth across people
-- Distribution of wealth across companies
+- Distribution of money across people
+- Distribution of money across companies
 - Unemployment rate
-- Percentage of companies that went out of business
+- Business closure rate
 
 The distributions are represented with multiple lines showing various
 percentiles.
+
+These charts are shown at 3 different levels: over the entire economy, broken
+down by income level, and broken down by industry.
 
 That's it! Have fun playing around with the parameters!
 
