@@ -8,26 +8,20 @@ months_per_year = 12
 days_per_month = 30
 defaults = {
   'ncompanies': 10,
-  'employees': [
-    [10],
-    [1]
-  ],
   'income': [
     [65000],
+    [1]
+  ],
+  'employees': [
+    [10],
     [1]
   ],
   'periods': [
     {
       'ndays': 360,
+      'person_stimulus': 1,
+      'company_stimulus': 1,
       'rehire_rate': 1,
-      'people_new_money': [
-        [1],
-        [1]
-      ],
-      'companies_new_money': [
-        [1],
-        [1]
-      ],
       'spending': [
         [[0, 1]],
         [1]
@@ -102,19 +96,16 @@ def init(
   people = reset_spending_rates(people, spending)
   return people, companies
 
-# Given the list of people and companies, and the distribution of additional
-# money each should get, gives each person and company an amount of additional
-# money drawn from their distribution. Returns the new list of people and
+# Grant stimulus for people and companies. Returns the new list of people and
 # companies.
-def give_new_money(people, companies, people_new_money, companies_new_money):
-  people_months = np.random.choice(people_new_money[0], p=people_new_money[1], size=len(people))
-  for i in range(len(people)):
-    people[i].money += people_months[i] * people[i].income
+def grant_stimulus(people, companies, person_stimulus, company_stimulus):
+  for p in people:
+    p.money += person_stimulus * p.income
 
-  companies_months = np.random.choice(companies_new_money[0], p=companies_new_money[1], size=len(companies))
-  for i in range(len(companies)):
-    payroll = np.sum([e.income for e in companies[i].employees])
-    companies[i].money += companies_months[i] * payroll
+  for c in companies:
+    payroll = np.sum([e.income for e in c.employees])
+    c.money += company_stimulus * payroll
+
   return people, companies
 
 # Given the list of people, companies, and industries each person picks a random
@@ -267,8 +258,8 @@ def run(
     spending=periods[0]['spending'],
     industry_names=industry_names
   )
-  people_new_money = None
-  companies_new_money = None
+  person_stimulus = None
+  company_stimulus = None
   rehire_rate = None
   spending = None
   industries = None
@@ -282,14 +273,14 @@ def run(
   results = calculate_stats(results, people, companies)
   for i in range(len(periods)):
     # Set parameters for this period
-    people_new_money = people_new_money if 'people_new_money' not in periods[i] else periods[i]['people_new_money']
-    companies_new_money = companies_new_money if 'companies_new_money' not in periods[i] else periods[i]['companies_new_money']
+    person_stimulus = person_stimulus if 'person_stimulus' not in periods[i] else periods[i]['person_stimulus']
+    company_stimulus = company_stimulus if 'company_stimulus' not in periods[i] else periods[i]['company_stimulus']
     rehire_rate = rehire_rate if 'rehire_rate' not in periods[i] else periods[i]['rehire_rate']
     spending = spending if 'spending' not in periods[i] else periods[i]['spending']
     industries = industries if 'industries' not in periods[i] else periods[i]['industries']
 
-    # Give additional money for this period
-    people, companies = give_new_money(people, companies, people_new_money, companies_new_money)
+    # Grant stimulus for this period
+    people, companies = grant_stimulus(people, companies, person_stimulus, person_stimulus)
 
     # Run the period
     for j in range(periods[i]['ndays']):

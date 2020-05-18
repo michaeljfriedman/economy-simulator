@@ -100,30 +100,30 @@ def test_init_industries():
         return
   print('Passed')
 
-def test_new_money():
-  print('Check that new money is allocated according to the distribution')
+def test_stimulus():
+  print('Check that stimulus is granted correctly')
   n = 1000
   income = 1
   init_money = 10
-  low = 1
-  high = 2
-  p = 0.25
+  person_stimulus = 0.8
+  company_stimulus = 0.9
   people = [simulator.Person(money=init_money, income=income) for i in range(n)]
   companies = [simulator.Company(money=init_money, employees=[people[i]]) for i in range(n)]
-  new_money = [[low, high], [p, 1 - p]]
-  people, companies = simulator.give_new_money(people, companies, new_money, new_money)
+  people, companies = simulator.grant_stimulus(people, companies, person_stimulus, company_stimulus)
 
-  # Check that money distributions for people and companies are correct
-  tolerance = 0.05
-  for group_name, group in zip(['people', 'companies'], [people, companies]):
-    for amt, prob in zip(new_money[0], new_money[1]):
-      n_amt = len([x for x in group if x.money == init_money + amt * income])
-      lower_bound = len(group) * (prob - tolerance)
-      upper_bound = len(group) * (prob + tolerance)
-      if not (lower_bound <= n_amt <= upper_bound):
-        print('Failed: %s money distribution is off' % group_name)
-        print('Expected: for amt=%d w/ prob=%.2f, n_amt should be in range [%d, %d]' % (amt, prob, int(lower_bound), int(upper_bound)))
-        print('Actual:   n_amt=%d' % n_amt)
+  # Check that money is correct
+  groups = [
+    ('people', people, person_stimulus),
+    ('companies', companies, company_stimulus)
+  ]
+  for group_name, group, stimulus in groups:
+    expected_money = init_money + stimulus * income
+    nincorrect = len([x for x in group if x.money != expected_money])
+    for x in group:
+      if x.money != expected_money:
+        print('Failed: Someone in %s had wrong amount of money' % (group_name))
+        print('Expected: money=%.2f' % expected_money)
+        print('Actual:   money=%.2f' % x.money)
         return
   print('Passed')
 
@@ -396,7 +396,7 @@ def main():
   test_init_income_distribution()
   test_init_spending_distribution()
   test_init_industries()
-  test_new_money()
+  test_stimulus()
   test_people_spending1()
   test_people_spending2()
   test_people_spending_when_out_of_business()
