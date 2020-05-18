@@ -1,12 +1,12 @@
 import simulator
 import sys
 
-def test_init_employee_distribution():
-  print('Check that employees are allocated according to the distribution')
+def test_init_company_size():
+  print('Check that company sizes are allocated according to the distribution')
   low = 10
   high = 20
   p = 0.5
-  people, companies = simulator.init(ncompanies=100, employees=[[low, high], [p, p]])
+  people, companies = simulator.init(ncompanies=100, company_size=[[low, high], [p, p]])
 
   # Check that all people are assigned to a company
   for i in range(len(people)):
@@ -26,8 +26,8 @@ def test_init_employee_distribution():
   lower_bound = len(companies) * (p - tolerance)
   upper_bound = len(companies) * (p + tolerance)
   if not (lower_bound <= nlow <= upper_bound and lower_bound <= nhigh <= upper_bound):
-    print('Failed: employee distribution is off')
-    print('Expected: num employees in each category in [%d, %d]' % (int(lower_bound), int(upper_bound)))
+    print('Failed: company size distribution is off')
+    print('Expected: size in each category in [%d, %d]' % (int(lower_bound), int(upper_bound)))
     print('Actual:   nlow=%d, nhigh=%d' % (nlow, nhigh))
     return
   print('Passed')
@@ -38,7 +38,7 @@ def test_init_income_distribution():
   high = 24
   p = 0.5
   income = [[low, high], [p, p]]
-  people, _ = simulator.init(ncompanies=1, income=income, employees=[[1000], [1]])
+  people, _ = simulator.init(ncompanies=1, income=income, company_size=[[1000], [1]])
 
   nlow = len([p for p in people if p.income == low / simulator.months_per_year])
   nhigh = len([p for p in people if p.income == high / simulator.months_per_year])
@@ -61,7 +61,7 @@ def test_init_spending_distribution():
   people, _ = simulator.init(
     ncompanies=1,
     spending=[[range1, range2], [p, p]],
-    employees=[[1000], [1]]
+    company_size=[[1000], [1]]
   )
 
   nrange1 = len([p for p in people if range1[0] <= p.spending_rate < range1[1]])
@@ -392,7 +392,7 @@ def test_rehire():
 
 # Run all tests
 def main():
-  test_init_employee_distribution()
+  test_init_company_size()
   test_init_income_distribution()
   test_init_spending_distribution()
   test_init_industries()

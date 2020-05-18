@@ -12,13 +12,13 @@ defaults = {
     [65000],
     [1]
   ],
-  'employees': [
+  'company_size': [
     [10],
     [1]
   ],
   'periods': [
     {
-      'ndays': 360,
+      'duration': 360,
       'person_stimulus': 1,
       'company_stimulus': 1,
       'rehire_rate': 1,
@@ -75,8 +75,8 @@ def reset_spending_rates(people, spending_dist):
 # Initializes the simulator. Returns the list of people and companies
 def init(
   ncompanies=defaults['ncompanies'],
-  employees=defaults['employees'],
   income=defaults['income'],
+  company_size=defaults['company_size'],
   spending=defaults['periods'][0]['spending'],
   industry_names=defaults['periods'][0]['industries'][0]
   ):
@@ -84,9 +84,9 @@ def init(
   # Assign people to companies
   people = []
   companies = [Company(industry=industry_names[i % len(industry_names)]) for i in range(ncompanies)]
-  nemployees = np.random.choice(employees[0], p=employees[1], size=len(companies))
+  size = np.random.choice(company_size[0], p=company_size[1], size=len(companies))
   for i in range(ncompanies):
-    companies[i].employees = [Person(industry=companies[i].industry) for j in range(nemployees[i])]
+    companies[i].employees = [Person(industry=companies[i].industry) for j in range(size[i])]
     people += companies[i].employees
 
   # Assign each person income and spending rates
@@ -215,7 +215,7 @@ def pay_employees(people, companies):
 def run(
   ncompanies=defaults['ncompanies'],
   income=defaults['income'],
-  employees=defaults['employees'],
+  company_size=defaults['company_size'],
   periods=defaults['periods'],
   on_eod=lambda period, day, people, companies: None
   ):
@@ -224,7 +224,7 @@ def run(
   industry_names = periods[0]['industries'][0]
   people, companies = init(
     ncompanies=ncompanies,
-    employees=employees,
+    company_size=company_size,
     income=income,
     spending=periods[0]['spending'],
     industry_names=industry_names
@@ -248,7 +248,7 @@ def run(
     people, companies = grant_stimulus(people, companies, person_stimulus, person_stimulus)
 
     # Run the period
-    for j in range(periods[i]['ndays']):
+    for j in range(periods[i]['duration']):
       ind_companies = {
         ind: [c for c in companies if c.in_business and c.industry == ind]
         for ind in industries[0]

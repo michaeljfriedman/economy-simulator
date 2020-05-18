@@ -37,7 +37,7 @@ def main(argv):
     config = json.loads(f.read())
 
   # Run simulator
-  total_ndays = sum([config['periods'][i]['ndays'] for i in range(len(config['periods']))])
+  total_ndays = sum([config['periods'][i]['duration'] for i in range(len(config['periods']))])
   person_income = [[]]
   person_money = [[] for i in range(total_ndays)]
   person_industries = [[] for i in range(total_ndays)]
@@ -63,8 +63,8 @@ def main(argv):
 
   simulator.run(
     ncompanies=config['ncompanies'],
-    employees=config['employees'],
     income=config['income'],
+    company_size=config['company_size'],
     periods=config['periods'],
     on_eod=on_eod
   )
