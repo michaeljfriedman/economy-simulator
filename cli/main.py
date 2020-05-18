@@ -1,9 +1,16 @@
 '''
 This is the executable of the project. You can run this to run the simulator
 from the command line. Outputs the results to the specified directory:
-- A csv file for each result statistic: person wealth, company wealth, and
-  unemployment rate. Each row is a day of data (the first column is the day).
-- A plot of the results
+- person_income.csv: A row of each person's income
+- person_money.csv: 1 row for each day, recording each person's money that day
+- person_industries.csv: 1 row for each day, recording each person's industry
+  that day
+- person_employment.csv: 1 row for each day, recording 0/1 whether each person
+  is employed.
+- company_industries.csv: A row of each company's industry
+- company_money.csv: 1 row for each day, recording each company's money that day
+- company_closures.csv: 1 row for each day, recording 0/1 whether each company
+  is closed down
 
 Example:
 python main.py --config=config.json --output=output
@@ -14,6 +21,7 @@ from tqdm import tqdm
 import argparse
 import csv
 import json
+import numpy as np
 import os
 import sys
 
@@ -30,9 +38,29 @@ def main(argv):
 
   # Run simulator
   total_ndays = sum([config['periods'][i]['ndays'] for i in range(len(config['periods']))])
+  person_income = [[]]
+  person_money = [[] for i in range(total_ndays)]
+  person_industries = [[] for i in range(total_ndays)]
+  person_employment = [[] for i in range(total_ndays)]
+  company_industries = [[]]
+  company_money = [[] for i in range(total_ndays)]
+  company_closures = [[] for i in range(total_ndays)]
   t = tqdm(total=total_ndays)
   def update_progress(period, day, people, companies, results):
+    i = simulator.days_per_month * period + day
+    for p in people:
+      if period == 0 and day == 0:
+        person_income[0].append(p.income)
+      person_money[i].append(p.money)
+      person_industries[i].append(p.industry)
+      person_employment[i].append(p.employed)
+    for c in companies:
+      if period == 0 and day == 0:
+        company_industries[0].append(c.industry)
+      company_money[i].append(c.money)
+      company_closures[i].append(not c.in_business)
     t.update()
+
   results = simulator.run(
     ncompanies=config['ncompanies'],
     employees=config['employees'],
@@ -43,23 +71,27 @@ def main(argv):
   t.close()
 
   # Write results
-  for ind, ind_results in results.items():
-    path = os.path.join(args.output_dir, ind)
-    if not os.path.isdir(path):
-      os.makedirs(path, exist_ok=True)
-
-    # Convert results to csv-writable format
-    ind_results['unemployment'] = list(map(lambda x: [x], ind_results['unemployment']))
-    ind_results['out_of_business'] = list(map(lambda x: [x], ind_results['out_of_business']))
-
-    # Write
-    days = [i for i in range(len(ind_results['unemployment']))]
-    for name, data in ind_results.items():
-      output_file = os.path.join(path, '%s.csv' % name)
-      with open(output_file, 'w') as f:
-        w = csv.writer(f)
-        rows = [[day] + row for day, row in zip(days, data)]
-        w.writerows(rows)
+  if not os.path.isdir(args.output_dir):
+      os.mkdir(args.output_dir)
+  files = [
+    ('person_income', person_income),
+    ('person_money', person_money),
+    ('person_industries', person_industries),
+    ('person_employment', person_employment),
+    ('company_industries', company_industries),
+    ('company_money', company_money),
+    ('company_closures', company_closures)
+  ]
+  for filename, data in files:
+    path = os.path.join(args.output_dir, '%s.csv' % filename)
+    with open(path, 'w') as f:
+      w = csv.writer(f)
+      arr = np.array(data)
+      if filename in ['person_income', 'person_money', 'company_money']:
+        arr = np.around(arr, 2) # round to 2 decimal places
+      elif filename in ['person_employment', 'company_closures']:
+        arr = arr.astype(int) # convert to 0/1
+      w.writerows(arr)
 
 if __name__ == '__main__':
   main(sys.argv[1:])
