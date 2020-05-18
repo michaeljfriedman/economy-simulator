@@ -345,10 +345,10 @@ $(document).ready(() => {
   class Period {
     // index = index of this period (for display)
     constructor(index) {
-      this.ndays = new Var("ndays", new NumberInput("integer", "Number of days", 0));
+      this.duration = new Var("duration", new NumberInput("integer", "Number of days", 0));
+      this.personStimulus = new Var("person_stimulus", new NumberInput("float", "Person stimulus", 0));
+      this.companyStimulus = new Var("company_stimulus", new NumberInput("float", "Company stimulus", 0));
       this.rehireRate = new Var("rehire_rate", new NumberInput("float", "Rehire rate", 0));
-      this.peopleNewMoney = new Var("people_new_money", new DistributionInputs("integer", "Additional money for people"));
-      this.companiesNewMoney = new Var("companies_new_money", new DistributionInputs("integer", "Additional money for companies"));
       this.spending = new Var("spending", new DistributionInputs("range", "Spending distribution"));
       this.industries = new Var("industries", new DistributionInputs("string", "Industry distribution"));
 
@@ -356,10 +356,10 @@ $(document).ready(() => {
         element("div").addClass("card")
         .append(element("div").addClass("card-body")
           .append(element("h3").addClass("card-title").text("Period " + index))
-          .append(this.ndays.input.element)
+          .append(this.duration.input.element)
+          .append(this.personStimulus.input.element)
+          .append(this.companyStimulus.input.element)
           .append(this.rehireRate.input.element)
-          .append(this.peopleNewMoney.input.element)
-          .append(this.companiesNewMoney.input.element)
           .append(this.spending.input.element)
           .append(this.industries.input.element)
         )
@@ -369,10 +369,10 @@ $(document).ready(() => {
     // Sets the value from a JSON object. Returns true/false if successful
     fromJSON(json) {
       let success = true;
-      success &= this.ndays.set(json.ndays);
+      success &= this.duration.set(json.duration);
+      success &= this.personStimulus.set(json.person_stimulus);
+      success &= this.companyStimulus.set(json.company_stimulus);
       success &= this.rehireRate.set(json.rehire_rate);
-      success &= this.peopleNewMoney.set(json.people_new_money);
-      success &= this.companiesNewMoney.set(json.companies_new_money);
       success &= this.spending.set(json.spending);
       success &= this.industries.set(json.industries);
       return success;
@@ -443,8 +443,8 @@ $(document).ready(() => {
   class Config {
     constructor() {
       this.ncompanies = new Var("ncompanies", new NumberInput("integer", "Number of companies", 0));
-      this.employees = new Var("employees", new DistributionInputs("integer", "Employee distribution"));
-      this.income = new Var("income", new DistributionInputs("integer", "Income distribution"));
+      this.income = new Var("income", new DistributionInputs("integer", "Income levels"));
+      this.companySize = new Var("company_size", new DistributionInputs("integer", "Company size"));
       this.periods = new Periods();
 
       this.element = element("div")
@@ -453,8 +453,8 @@ $(document).ready(() => {
           .append(element("div").addClass("card-body")
             .append(element("h2").addClass("card-title").text("Base Parameters"))
             .append(this.ncompanies.input.element)
-            .append(this.employees.input.element)
             .append(this.income.input.element)
+            .append(this.companySize.input.element)
           )
         ))
         .append(this.periods.element);
@@ -463,13 +463,13 @@ $(document).ready(() => {
     toJSON() {
       let json = {
         ncompanies: this.ncompanies.input.value,
-        employees: [
-          this.employees.input.values,
-          this.employees.input.probabilities
-        ],
         income: [
           this.income.input.values,
           this.income.input.probabilities
+        ],
+        company_size: [
+          this.companySize.input.values,
+          this.companySize.input.probabilities
         ],
         periods: []
       };
@@ -477,16 +477,10 @@ $(document).ready(() => {
       for (let i = 0; i < this.periods.periods.length; i++) {
         let p = this.periods.periods[i];
         json.periods.push({
-          ndays: p.ndays.input.value,
+          duration: p.duration.input.value,
+          person_stimulus: p.personStimulus.input.value,
+          company_stimulus: p.companyStimulus.input.value,
           rehire_rate: p.rehireRate.input.value,
-          people_new_money: [
-            p.peopleNewMoney.input.values,
-            p.peopleNewMoney.input.probabilities
-          ],
-          companies_new_money: [
-            p.companiesNewMoney.input.values,
-            p.companiesNewMoney.input.probabilities
-          ],
           spending: [
             p.spending.input.values,
             p.spending.input.probabilities
@@ -505,8 +499,8 @@ $(document).ready(() => {
     fromJSON(json) {
       let success = true;
       success &= this.ncompanies.set(json.ncompanies);
-      success &= this.employees.set(json.employees);
       success &= this.income.set(json.income);
+      success &= this.companySize.set(json.companySize);
       success &= this.periods.fromJSON(json.periods);
       return success;
     }

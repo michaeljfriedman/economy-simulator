@@ -53,7 +53,7 @@ def run_simulator(ws):
         return
 
   # Run simulator
-  def update_progress(period, day, people, companies, results):
+  def on_eod(period, day, people, companies, results):
     try:
       today = {}
       for industry, subresults in results.items():
@@ -66,9 +66,9 @@ def run_simulator(ws):
       pass
   simulator.run(
     ncompanies=config['ncompanies'],
-    employees=config['employees'],
     income=config['income'],
+    company_size=config['company_size'],
     periods=config['periods'],
-    update_progress=update_progress
+    on_eod=on_eod
   )
   ws.close()
