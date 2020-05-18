@@ -5,8 +5,8 @@ from the command line. Outputs the results to the specified directory:
 - person_money.csv: 1 row for each day, recording each person's money that day
 - person_industries.csv: 1 row for each day, recording each person's industry
   that day
-- person_employment.csv: 1 row for each day, recording 0/1 whether each person
-  is employed.
+- person_unemployment.csv: 1 row for each day, recording 0/1 whether each person
+  is unemployed.
 - company_industries.csv: A row of each company's industry
 - company_money.csv: 1 row for each day, recording each company's money that day
 - company_closures.csv: 1 row for each day, recording 0/1 whether each company
@@ -41,19 +41,19 @@ def main(argv):
   person_income = [[]]
   person_money = [[] for i in range(total_ndays)]
   person_industries = [[] for i in range(total_ndays)]
-  person_employment = [[] for i in range(total_ndays)]
+  person_unemployment = [[] for i in range(total_ndays)]
   company_industries = [[]]
   company_money = [[] for i in range(total_ndays)]
   company_closures = [[] for i in range(total_ndays)]
   t = tqdm(total=total_ndays)
-  def update_progress(period, day, people, companies, results):
+  def on_eod(period, day, people, companies):
     i = simulator.days_per_month * period + day
     for p in people:
       if period == 0 and day == 0:
         person_income[0].append(p.income)
       person_money[i].append(p.money)
       person_industries[i].append(p.industry)
-      person_employment[i].append(p.employed)
+      person_unemployment[i].append(not p.employed)
     for c in companies:
       if period == 0 and day == 0:
         company_industries[0].append(c.industry)
@@ -61,12 +61,12 @@ def main(argv):
       company_closures[i].append(not c.in_business)
     t.update()
 
-  results = simulator.run(
+  simulator.run(
     ncompanies=config['ncompanies'],
     employees=config['employees'],
     income=config['income'],
     periods=config['periods'],
-    update_progress=update_progress
+    on_eod=on_eod
   )
   t.close()
 
@@ -77,7 +77,7 @@ def main(argv):
     ('person_income', person_income),
     ('person_money', person_money),
     ('person_industries', person_industries),
-    ('person_employment', person_employment),
+    ('person_unemployment', person_unemployment),
     ('company_industries', company_industries),
     ('company_money', company_money),
     ('company_closures', company_closures)
@@ -89,7 +89,7 @@ def main(argv):
       arr = np.array(data)
       if filename in ['person_income', 'person_money', 'company_money']:
         arr = np.around(arr, 2) # round to 2 decimal places
-      elif filename in ['person_employment', 'company_closures']:
+      elif filename in ['person_unemployment', 'company_closures']:
         arr = arr.astype(int) # convert to 0/1
       w.writerows(arr)
 

@@ -200,53 +200,24 @@ def pay_employees(people, companies):
       e.money += amount
   return people, companies
 
-# Calculates statistics based on the current state of the model and adds them
-# to the given results. Returns the new results.
-def calculate_stats(results, people, companies):
-  for ind, ind_results in results.items():
-    ind_people = [p for p in people if p.industry == ind]
-    ind_companies = [c for c in companies if c.industry == ind]
-    percentiles = range(0, 101)
-    new_results = {
-      'person_wealth': [0] * len(percentiles) if len(ind_people) == 0 else list(np.percentile([p.money for p in ind_people], percentiles)),
-      'company_wealth': [0] * len(percentiles) if len(ind_companies) == 0 else list(np.percentile([c.money for c in ind_companies], percentiles)),
-      'unemployment': 1 if len(ind_people) == 0 else len([p for p in ind_people if not p.employed]) / len(ind_people),
-      'out_of_business': 1 if len(ind_companies) == 0 else len([c for c in ind_companies if not c.in_business]) / len(ind_companies)
-    }
-    for k in ind_results.keys():
-      ind_results[k].append(new_results[k])
-  return results
-
 # Runs the simulator, given the parameters as defined in design.md; and an
-# optional callback function update_progress, which is called at the end of each
-# day, with the following arguments:
+# optional callback function on_eod, which is called at the end of each day,
+# with the following arguments:
 # - period: the index of the current period (from 0)
 # - day: the index of the current day (from 0)
 # - people: the list of people
 # - companies: the list of companies
-# - results: the dict of results through the current day, as described below.
-# The caller can use this to report progress up a level.
+# The caller can use this to record data and/or report progress up a level.
 #
 # NOTE: Be mindful - these args are passed by reference, so you can technically
 # change them and mess with the simulation. Please don't do that. Read only. I
 # would have passed a copy instead, but it slows down the simulation a lot.
-#
-# Returns a dict of results. Each key is an industry name from industries, and
-# each value is a dict of:
-# - person_wealth: a list of stats, one for each day, where each day is a list
-#   of every percentile of the wealth distribution across people in that
-#   industry.
-# - company_wealth: an analogous list for company wealth
-# - unemployment: a list of unemployment rates in that industry, one for each
-#   day
-# - out_of_business: a list of out-of-business rates (fraction of companies
-#   in that industry that are out of business), one for each day
 def run(
   ncompanies=defaults['ncompanies'],
   income=defaults['income'],
   employees=defaults['employees'],
   periods=defaults['periods'],
-  update_progress=lambda period, day, people, companies, results: None
+  on_eod=lambda period, day, people, companies: None
   ):
 
   # Set up simulation
@@ -265,12 +236,6 @@ def run(
   industries = None
 
   # Run simluation
-  results = {
-    industry: {
-      'person_wealth': [], 'company_wealth': [], 'unemployment': [], 'out_of_business': []
-    } for industry in industry_names
-  }
-  results = calculate_stats(results, people, companies)
   for i in range(len(periods)):
     # Set parameters for this period
     person_stimulus = person_stimulus if 'person_stimulus' not in periods[i] else periods[i]['person_stimulus']
@@ -300,7 +265,4 @@ def run(
         # Reset people's spending rates
         people = reset_spending_rates(people, spending)
 
-      results = calculate_stats(results, people, companies)
-      update_progress(i, j, people, companies, results)
-
-  return results
+      on_eod(i, j, people, companies)

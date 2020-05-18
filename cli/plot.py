@@ -16,10 +16,19 @@ import os
 # - names = list of names to compute percentiles for
 # - cols = list of column indexes
 # - percentiles = list of percentiles to compute
-def compute_results(data, names, cols, percentiles):
+def compute_percentiles(data, names, cols, percentiles):
   results = {}
   for name in names:
     results[name] = np.percentile(data[name][:,cols], percentiles, axis=1).T
+  return results
+
+# Computes the average of each row of each dataset, restricted to only the given
+# cols
+def compute_avg(data, names, cols):
+  results = {}
+  for name in names:
+    nrows = data[name].shape[0]
+    results[name] = np.mean(data[name][:,cols], axis=1).reshape((nrows, 1))
   return results
 
 # Plots one set of results to an output file.
@@ -54,7 +63,7 @@ def main():
     'person_income': [],
     'person_money': [],
     'person_industries': [],
-    'person_employment': [],
+    'person_unemployment': [],
     'company_industries': [],
     'company_money': [],
     'company_closures': []
@@ -75,8 +84,8 @@ def main():
   for f in data:
     if f in ['person_income', 'person_money', 'company_money']:
       dtype = np.float
-    elif f in ['person_employment', 'company_closures']:
-      dtype = np.bool
+    elif f in ['person_unemployment', 'company_closures']:
+      dtype = np.int
     else:
       dtype = np.str
     data[f] = np.array(data[f], dtype=dtype)
@@ -91,43 +100,71 @@ def main():
   ncompanies = data['company_money'].shape[1]
 
   # Plot overall results
-  overall_results = compute_results(
+  overall_results = compute_percentiles(
     data=data,
-    names=['person_money', 'person_employment'],
+    names=['person_money'],
     cols=range(npeople),
     percentiles=args.percentiles
   )
-  overall_results.update(compute_results(
+  overall_results.update(compute_avg(
     data=data,
-    names=['company_money', 'company_closures'],
+    names=['person_unemployment'],
+    cols=range(npeople)
+  ))
+  overall_results.update(compute_percentiles(
+    data=data,
+    names=['company_money'],
     cols=range(ncompanies),
     percentiles=args.percentiles
+  ))
+  overall_results.update(compute_avg(
+    data=data,
+    names=['company_closures'],
+    cols=range(ncompanies)
   ))
   plot(x, overall_results, os.path.join(args.directory, 'overall.png'))
 
   # Plot results per income level
   for income in np.unique(data['person_income']):
-    y = compute_results(
+    cols = [j for j in range(npeople) if data['person_income'][0,j] == income]
+    y = compute_percentiles(
       data=data,
-      names=['person_money', 'person_employment'],
-      cols=[j for j in range(npeople) if data['person_income'][0,j] == income],
+      names=['person_money'],
+      cols=cols,
       percentiles=args.percentiles
     )
+    y.update(compute_avg(
+      data=data,
+      names=['person_unemployment'],
+      cols=cols
+    ))
     plot(x, y, os.path.join(args.directory, 'income-%.2f.png' % income))
 
   # Plot results per industry
   for ind in np.unique(data['company_industries']):
-    y = compute_results(
+    cols_people = [j for j in range(npeople) if data['person_industries'][0,j] == ind]
+    cols_companies = [j for j in range(ncompanies) if data['company_industries'][0,j] == ind]
+    y = compute_percentiles(
       data=data,
-      names=['person_money', 'person_employment'],
-      cols=[j for j in range(npeople) if data['person_industries'][0,j] == ind],
+      names=['person_money'],
+      cols=cols_people,
       percentiles=args.percentiles
     )
-    y.update(compute_results(
+    y.update(compute_avg(
       data=data,
-      names=['company_money', 'company_closures'],
-      cols=[j for j in range(ncompanies) if data['company_industries'][0,j] == ind],
+      names=['person_unemployment'],
+      cols=cols_people
+    ))
+    y.update(compute_percentiles(
+      data=data,
+      names=['company_money',],
+      cols=cols_companies,
       percentiles=args.percentiles
+    ))
+    y.update(compute_avg(
+      data=data,
+      names=['company_closures'],
+      cols=cols_companies
     ))
     plot(x, y, os.path.join(args.directory, 'industry-%s.png' % ind))
 
