@@ -461,8 +461,8 @@ $(document).ready(() => {
         periods: []
       };
 
-      for (let i = 0; i < this.periods.periods.length; i++) {
-        let p = this.periods.periods[i];
+      for (let i = 0; i < this.periods.length; i++) {
+        let p = this.periods[i];
         json.periods.push({
           duration: p.duration.input.value,
           person_stimulus: p.personStimulus.input.value,
@@ -608,7 +608,7 @@ $(document).ready(() => {
         .text("Run")
         .on("click", () => {
           // Create charts for each industry in the config
-          let industries = config.periods.periods[0].industries.input.values;
+          let industries = config.periods[0].industries.input.values;
           let charts = [
             new Statistic(
               "person_wealth",
