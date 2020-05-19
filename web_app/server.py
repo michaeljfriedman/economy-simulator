@@ -10,7 +10,15 @@ from simulator import simulator
 import flask
 import flask_sockets
 import json
+import numpy as np
 import time
+
+# Merges dicts
+def merge(dicts):
+  d0 = dicts[0]
+  for d in dicts[1:]:
+    d0.update(d)
+  return d0
 
 app = flask.Flask(__name__)
 sockets = flask_sockets.Sockets(app)
@@ -52,18 +60,54 @@ def run_simulator(ws):
         replyInvalid(ws)
         return
 
-  # Run simulator
-  def on_eod(period, day, people, companies, results):
+  # Helper functions
+  def people_results(people, percentiles):
+    return {
+      'person_money': np.percentile([p.money for p in people], percentiles),
+      'person_unemployment': np.mean([not p.employed for p in people])
+    }
+
+  def company_results(companies, percentiles):
+    return {
+      'company_money': np.percentile([c.money for c in companies], percentiles),
+      'company_closures': np.mean([not c.in_business for c in companies])
+    }
+
+  # eod callback computes results from the day and sends to the client
+  def on_eod(period, day, people, companies):
+    percentiles = [0, 10, 25, 50, 75, 90, 100]
+    income_levels = set([p.income for p in people])
+    industries = set([c.industry for c in companies])
+    data = {
+      'overall': {
+        merge([
+          people_results(people, percentiles),
+          company_results(companies, percentiles)
+        ])
+      },
+      'income_levels': [
+        merge([
+          {'income_level': i},
+          people_results([p for p in people if p.income == i], percentiles)
+        ])
+        for i in income_levels
+      ],
+      'industries': [
+        merge([
+          {'industry': i},
+          people_results([p for p in people if p.industry == i], percentiles),
+          company_results([c for c in companies if c.industry == i], percentiles)
+        ])
+        for i in industries
+      ]
+    }
+    msg = json.dumps({'data': data, 'period': period, 'day': day})
     try:
-      today = {}
-      for industry, subresults in results.items():
-        today[industry] = {}
-        for r, data in subresults.items():
-          today[industry][r] = data[day]
-      msg = json.dumps({'results': today, 'period': period, 'day': day})
       ws.send(msg)
     except Exception:
       pass
+
+  # Run the simulator
   simulator.run(
     ncompanies=config['ncompanies'],
     income=config['income'],
