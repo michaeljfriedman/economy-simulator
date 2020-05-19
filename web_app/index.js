@@ -487,7 +487,7 @@ $(document).ready(() => {
       let success = true;
       success &= this.ncompanies.set(json.ncompanies);
       success &= this.income.set(json.income);
-      success &= this.companySize.set(json.companySize);
+      success &= this.companySize.set(json.company_size);
 
       // Add/remove periods if necessary to match the given set
       let diff = Math.abs(json.periods.length - this.periods.length);
@@ -574,24 +574,16 @@ $(document).ready(() => {
     }
   }
 
-  // Container for all of the charts of a particular statistic (e.g. person
-  // wealth, company wealth), across all industries
-  class Statistic {
-    // name = one of {person_wealth, company_wealth, unemployment, out_of_business}
+  // Container for attributes of one type of chart
+  class ChartType {
+    // name = the name
     // displayName, {x,y}Label, legend = the title, {x,y}Label, and legend of the ChartComponent
-    // yIndices = when the server provides an array of values for this statistic (e.g. person wealth),
-    //   specify an array of indices to plot. Otherwise (e.g. unemployment), set this to null
-    constructor(name, displayName, xLabel, yLabel, legend, yIndices) {
+    constructor(name, displayName, xLabel, yLabel, legend) {
       this.name = name;
       this.displayName = displayName;
       this.xLabel = xLabel;
       this.yLabel = yLabel;
       this.legend = legend;
-      this.yIndices = yIndices;
-
-      // Parallel arrays - the ChartComponent for each industry
-      this.chartComponents = [];
-      this.industries = [];
     }
   }
 
@@ -609,59 +601,57 @@ $(document).ready(() => {
         .on("click", () => {
           // Create charts for each industry in the config
           let industries = config.periods[0].industries.input.values;
-          let charts = [
-            new Statistic(
-              "person_wealth",
+          let chartTypes = [
+            new ChartType(
+              "person_money",
               "Distribution of wealth across people",
               "Months",
               "Dollars",
-              ["Min", "10%", "25%", "50%", "75%", "90%", "Max"],
-              [0, 10, 25, 50, 75, 90, 100]
+              ["Min", "10%", "25%", "50%", "75%", "90%", "Max"]
             ),
-            new Statistic(
-              "company_wealth",
+            new ChartType(
+              "company_money",
               "Distribution of wealth across companies",
               "Months",
               "Dollars",
-              ["Min", "10%", "25%", "50%", "75%", "90%", "Max"],
-              [0, 10, 25, 50, 75, 90, 100]
+              ["Min", "10%", "25%", "50%", "75%", "90%", "Max"]
             ),
-            new Statistic(
-              "unemployment",
+            new ChartType(
+              "person_unemployment",
               "Unemployment rate",
               "Months",
               "Rate",
-              [""],
-              null
+              [""]
             ),
-            new Statistic(
-              "out_of_business",
-              "Fraction of companies out of business",
+            new ChartType(
+              "company_closures",
+              "Company closure rate",
               "Months",
               "Fraction",
-              [""],
-              null
+              [""]
             )
           ];
-          let chartsElement = withPadding(
-            element("div").addClass("card").addClass("border-0")
-            .append(element("div").addClass("card-body")
-              .append(element("h2").addClass("card-title").text("Results"))
+          let chartsOverall = {
+            element: withPadding(
+              element("div").addClass("card").addClass("border-0")
+              .append(element("div").addClass("card-body")
+                .append(element("h2").addClass("card-title").text("Overall results"))
+                .append(element("div").addClass("row"))
+              )
             )
-          );
-          industries.forEach((industry) => {
-            $(chartsElement.find(".card-body")[0]).append(element("h3").text(industry));
-            charts.forEach((chart) => {
-              let chartComponent = new ChartComponent(chart.displayName, chart.legend, chart.xLabel, chart.yLabel);
-              chart.chartComponents.push(chartComponent);
-              chart.industries.push(industry);
-              chartsElement.append(chartComponent.element);
-            });
+          };
+          chartTypes.forEach((type) => {
+            let chart = new ChartComponent(type.displayName, type.legend, type.xLabel, type.yLabel);
+            $(chartsOverall.element.find(".row")[0]).append(
+              element("div").addClass("col-md-6")
+              .append(chart.element)
+            );
+            chartsOverall[type.name] = chart;
           });
 
           // Render charts
           chartsContainer.empty();
-          chartsContainer.append(chartsElement);
+          chartsContainer.append(chartsOverall.element);
 
 
           // Send config to the server, and populate results in the charts
@@ -680,24 +670,11 @@ $(document).ready(() => {
               return;
             }
 
-            // Add the new data to each chart
-            charts.forEach((chart) => {
-              for (let i = 0; i < chart.chartComponents.length; i++) {
-                let industry = chart.industries[i];
-                let data = msg.results[industry][chart.name];
-
-                // Extract only the y indices in the plot
-                let newData = [];
-                if (chart.yIndices != null) {
-                  chart.yIndices.forEach((idx) => {
-                    newData.push(data[idx]);
-                  });
-                } else {
-                  newData.push(data);
-                }
-
-                chart.chartComponents[i].update(newData);
-              }
+            // Add the new data to the charts
+            let data = msg.data.overall;
+            console.log(data);
+            Object.keys(data).forEach((type) => {
+              chartsOverall[type].update(data[type]);
             });
           };
         });

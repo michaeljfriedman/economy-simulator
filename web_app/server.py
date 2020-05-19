@@ -10,6 +10,7 @@ from simulator import simulator
 import flask
 import flask_sockets
 import json
+import logging
 import numpy as np
 import time
 
@@ -22,6 +23,9 @@ def merge(dicts):
 
 app = flask.Flask(__name__)
 sockets = flask_sockets.Sockets(app)
+gunicorn_logger = logging.getLogger('gunicorn.error')
+app.logger.handlers = gunicorn_logger.handlers
+app.logger.setLevel(gunicorn_logger.level)
 
 # Returns the index html page
 @app.route('/')
@@ -63,14 +67,14 @@ def run_simulator(ws):
   # Helper functions
   def people_results(people, percentiles):
     return {
-      'person_money': np.percentile([p.money for p in people], percentiles),
-      'person_unemployment': np.mean([not p.employed for p in people])
+      'person_money': list(np.percentile([p.money for p in people], percentiles)),
+      'person_unemployment': [np.mean([not p.employed for p in people])]
     }
 
   def company_results(companies, percentiles):
     return {
-      'company_money': np.percentile([c.money for c in companies], percentiles),
-      'company_closures': np.mean([not c.in_business for c in companies])
+      'company_money': list(np.percentile([c.money for c in companies], percentiles)),
+      'company_closures': [np.mean([not c.in_business for c in companies])]
     }
 
   # eod callback computes results from the day and sends to the client
@@ -79,12 +83,10 @@ def run_simulator(ws):
     income_levels = set([p.income for p in people])
     industries = set([c.industry for c in companies])
     data = {
-      'overall': {
-        merge([
-          people_results(people, percentiles),
-          company_results(companies, percentiles)
-        ])
-      },
+      'overall': merge([
+        people_results(people, percentiles),
+        company_results(companies, percentiles)
+      ]),
       'income_levels': [
         merge([
           {'income_level': i},
