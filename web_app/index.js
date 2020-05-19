@@ -379,85 +379,72 @@ $(document).ready(() => {
     }
   }
 
-  // A container for all periods
-  class Periods {
-    constructor() {
-      let buttons = new AddRemoveButtons(
-        // The "add" button adds a new period
-        () => {
-          this.add();
-        },
-
-        // The "remove" button removes a period
-        () => {
-          this.remove();
-        }
-      );
-      this.element = withPadding(
-        element("div").addClass("card").addClass("border-0")
-        .append(element("div").addClass("card-body")
-          .append(element("h2").addClass("card-title").text("Periods"))
-          .append(buttons.element)
-        )
-      );
-
-      this.periods = [];
-      this.add();
-    }
-
-    add() {
-      let p = new Period(this.periods.length + 1);
-      this.periods.push(p);
-      $(this.element.find(".card-body")[0]).append(p.element);
-    }
-
-    remove() {
-      if (this.periods.length != 0) {
-        let last = this.periods[this.periods.length - 1];
-        this.periods.pop();
-        last.element.remove();
-      }
-    }
-
-    // Sets the value from a JSON object. Returns true/false if successful
-    fromJSON(json) {
-      // Add/remove periods if necessary to match the given set
-      let diff = Math.abs(json.length - this.periods.length);
-      for (let i = 0; i < diff; i++) {
-        if (json.length > this.periods.length) {
-          this.add();
-        } else {
-          this.remove();
-        }
-      }
-
-      let success = true;
-      for (let i = 0; i < this.periods.length; i++) {
-        success &= this.periods[i].fromJSON(json[i]);
-      }
-      return success;
-    }
-  }
-
   // A container for the entire config
   class Config {
     constructor() {
       this.ncompanies = new Var("ncompanies", new NumberInput("integer", "Number of companies", 0));
       this.income = new Var("income", new DistributionInputs("integer", "Income levels"));
       this.companySize = new Var("company_size", new DistributionInputs("integer", "Company size"));
-      this.periods = new Periods();
+      this.periods = [];
 
-      this.element = element("div")
-        .append(withPadding(
-          element("div").addClass("card").addClass("border-0")
+      let periodButtons = new AddRemoveButtons(
+        // The "add" button adds a new period
+        () => {
+          this.addPeriod();
+        },
+
+        // The "remove" button removes a period
+        () => {
+          this.removePeriod();
+        }
+      );
+
+      this.periodsContainer = (
+        withPadding(element("div").addClass("card").addClass("border-0")
+        .append(element("div").addClass("card-body")
+          .append(element("h2").addClass("card-title").text("Periods"))
+          .append(periodButtons.element)
+          .append(element("div").addClass("row"))
+          )
+        )
+      );
+
+      this.element = (
+        element("div")
+        .append(withPadding(element("div").addClass("card").addClass("border-0")
           .append(element("div").addClass("card-body")
             .append(element("h2").addClass("card-title").text("Base Parameters"))
-            .append(this.ncompanies.input.element)
-            .append(this.income.input.element)
-            .append(this.companySize.input.element)
+            .append(element("div").addClass("row")
+              .append(element("div").addClass("col-md-4")
+                .append(this.ncompanies.input.element)
+              ).append(element("div").addClass("col-md-4")
+                .append(this.income.input.element)
+              ).append(element("div").addClass("col-md-4")
+                .append(this.companySize.input.element)
+              )
+            )
           )
         ))
-        .append(this.periods.element);
+      ).append(this.periodsContainer);
+
+      this.addPeriod();
+    }
+
+    addPeriod() {
+      let p = new Period(this.periods.length + 1);
+      this.periods.push(p);
+      $(this.periodsContainer.find(".row")[0]).append(
+        element("div").addClass("col")
+        .append(p.element)
+      );
+    }
+
+    removePeriod() {
+      if (this.periods.length != 0) {
+        let last = this.periods[this.periods.length - 1];
+        this.periods.pop();
+        last.element.parent().remove();
+      }
     }
 
     toJSON() {
@@ -501,7 +488,20 @@ $(document).ready(() => {
       success &= this.ncompanies.set(json.ncompanies);
       success &= this.income.set(json.income);
       success &= this.companySize.set(json.companySize);
-      success &= this.periods.fromJSON(json.periods);
+
+      // Add/remove periods if necessary to match the given set
+      let diff = Math.abs(json.periods.length - this.periods.length);
+      for (let i = 0; i < diff; i++) {
+        if (json.periods.length > this.periods.length) {
+          this.addPeriod();
+        } else {
+          this.removePeriod();
+        }
+      }
+
+      for (let i = 0; i < this.periods.length; i++) {
+        success &= this.periods[i].fromJSON(json.periods[i]);
+      }
       return success;
     }
   }
