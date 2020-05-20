@@ -345,10 +345,10 @@ $(document).ready(() => {
   class Period {
     // index = index of this period (for display)
     constructor(index) {
-      this.ndays = new Var("ndays", new NumberInput("integer", "Number of days", 0));
+      this.duration = new Var("duration", new NumberInput("integer", "Number of days", 0));
+      this.personStimulus = new Var("person_stimulus", new NumberInput("float", "Person stimulus", 0));
+      this.companyStimulus = new Var("company_stimulus", new NumberInput("float", "Company stimulus", 0));
       this.rehireRate = new Var("rehire_rate", new NumberInput("float", "Rehire rate", 0));
-      this.peopleNewMoney = new Var("people_new_money", new DistributionInputs("integer", "Additional money for people"));
-      this.companiesNewMoney = new Var("companies_new_money", new DistributionInputs("integer", "Additional money for companies"));
       this.spending = new Var("spending", new DistributionInputs("range", "Spending distribution"));
       this.industries = new Var("industries", new DistributionInputs("string", "Industry distribution"));
 
@@ -356,10 +356,10 @@ $(document).ready(() => {
         element("div").addClass("card")
         .append(element("div").addClass("card-body")
           .append(element("h3").addClass("card-title").text("Period " + index))
-          .append(this.ndays.input.element)
+          .append(this.duration.input.element)
+          .append(this.personStimulus.input.element)
+          .append(this.companyStimulus.input.element)
           .append(this.rehireRate.input.element)
-          .append(this.peopleNewMoney.input.element)
-          .append(this.companiesNewMoney.input.element)
           .append(this.spending.input.element)
           .append(this.industries.input.element)
         )
@@ -369,72 +369,12 @@ $(document).ready(() => {
     // Sets the value from a JSON object. Returns true/false if successful
     fromJSON(json) {
       let success = true;
-      success &= this.ndays.set(json.ndays);
+      success &= this.duration.set(json.duration);
+      success &= this.personStimulus.set(json.person_stimulus);
+      success &= this.companyStimulus.set(json.company_stimulus);
       success &= this.rehireRate.set(json.rehire_rate);
-      success &= this.peopleNewMoney.set(json.people_new_money);
-      success &= this.companiesNewMoney.set(json.companies_new_money);
       success &= this.spending.set(json.spending);
       success &= this.industries.set(json.industries);
-      return success;
-    }
-  }
-
-  // A container for all periods
-  class Periods {
-    constructor() {
-      let buttons = new AddRemoveButtons(
-        // The "add" button adds a new period
-        () => {
-          this.add();
-        },
-
-        // The "remove" button removes a period
-        () => {
-          this.remove();
-        }
-      );
-      this.element = withPadding(
-        element("div").addClass("card").addClass("border-0")
-        .append(element("div").addClass("card-body")
-          .append(element("h2").addClass("card-title").text("Periods"))
-          .append(buttons.element)
-        )
-      );
-
-      this.periods = [];
-      this.add();
-    }
-
-    add() {
-      let p = new Period(this.periods.length + 1);
-      this.periods.push(p);
-      $(this.element.find(".card-body")[0]).append(p.element);
-    }
-
-    remove() {
-      if (this.periods.length != 0) {
-        let last = this.periods[this.periods.length - 1];
-        this.periods.pop();
-        last.element.remove();
-      }
-    }
-
-    // Sets the value from a JSON object. Returns true/false if successful
-    fromJSON(json) {
-      // Add/remove periods if necessary to match the given set
-      let diff = Math.abs(json.length - this.periods.length);
-      for (let i = 0; i < diff; i++) {
-        if (json.length > this.periods.length) {
-          this.add();
-        } else {
-          this.remove();
-        }
-      }
-
-      let success = true;
-      for (let i = 0; i < this.periods.length; i++) {
-        success &= this.periods[i].fromJSON(json[i]);
-      }
       return success;
     }
   }
@@ -443,50 +383,91 @@ $(document).ready(() => {
   class Config {
     constructor() {
       this.ncompanies = new Var("ncompanies", new NumberInput("integer", "Number of companies", 0));
-      this.employees = new Var("employees", new DistributionInputs("integer", "Employee distribution"));
-      this.income = new Var("income", new DistributionInputs("integer", "Income distribution"));
-      this.periods = new Periods();
+      this.income = new Var("income", new DistributionInputs("integer", "Income levels"));
+      this.companySize = new Var("company_size", new DistributionInputs("integer", "Company size"));
+      this.periods = [];
 
-      this.element = element("div")
-        .append(withPadding(
-          element("div").addClass("card").addClass("border-0")
+      let periodButtons = new AddRemoveButtons(
+        // The "add" button adds a new period
+        () => {
+          this.addPeriod();
+        },
+
+        // The "remove" button removes a period
+        () => {
+          this.removePeriod();
+        }
+      );
+
+      this.periodsContainer = (
+        withPadding(element("div").addClass("card").addClass("border-0")
+        .append(element("div").addClass("card-body")
+          .append(element("h2").addClass("card-title").text("Periods"))
+          .append(periodButtons.element)
+          .append(element("div").addClass("row"))
+          )
+        )
+      );
+
+      this.element = (
+        element("div")
+        .append(withPadding(element("div").addClass("card").addClass("border-0")
           .append(element("div").addClass("card-body")
             .append(element("h2").addClass("card-title").text("Base Parameters"))
-            .append(this.ncompanies.input.element)
-            .append(this.employees.input.element)
-            .append(this.income.input.element)
+            .append(element("div").addClass("row")
+              .append(element("div").addClass("col-md-4")
+                .append(this.ncompanies.input.element)
+              ).append(element("div").addClass("col-md-4")
+                .append(this.income.input.element)
+              ).append(element("div").addClass("col-md-4")
+                .append(this.companySize.input.element)
+              )
+            )
           )
         ))
-        .append(this.periods.element);
+      ).append(this.periodsContainer);
+
+      this.addPeriod();
+    }
+
+    addPeriod() {
+      let p = new Period(this.periods.length + 1);
+      this.periods.push(p);
+      $(this.periodsContainer.find(".row")[0]).append(
+        element("div").addClass("col")
+        .append(p.element)
+      );
+    }
+
+    removePeriod() {
+      if (this.periods.length != 0) {
+        let last = this.periods[this.periods.length - 1];
+        this.periods.pop();
+        last.element.parent().remove();
+      }
     }
 
     toJSON() {
       let json = {
         ncompanies: this.ncompanies.input.value,
-        employees: [
-          this.employees.input.values,
-          this.employees.input.probabilities
-        ],
         income: [
           this.income.input.values,
           this.income.input.probabilities
         ],
+        company_size: [
+          this.companySize.input.values,
+          this.companySize.input.probabilities
+        ],
         periods: []
       };
 
-      for (let i = 0; i < this.periods.periods.length; i++) {
-        let p = this.periods.periods[i];
+      for (let i = 0; i < this.periods.length; i++) {
+        let p = this.periods[i];
         json.periods.push({
-          ndays: p.ndays.input.value,
+          duration: p.duration.input.value,
+          person_stimulus: p.personStimulus.input.value,
+          company_stimulus: p.companyStimulus.input.value,
           rehire_rate: p.rehireRate.input.value,
-          people_new_money: [
-            p.peopleNewMoney.input.values,
-            p.peopleNewMoney.input.probabilities
-          ],
-          companies_new_money: [
-            p.companiesNewMoney.input.values,
-            p.companiesNewMoney.input.probabilities
-          ],
           spending: [
             p.spending.input.values,
             p.spending.input.probabilities
@@ -505,9 +486,22 @@ $(document).ready(() => {
     fromJSON(json) {
       let success = true;
       success &= this.ncompanies.set(json.ncompanies);
-      success &= this.employees.set(json.employees);
       success &= this.income.set(json.income);
-      success &= this.periods.fromJSON(json.periods);
+      success &= this.companySize.set(json.company_size);
+
+      // Add/remove periods if necessary to match the given set
+      let diff = Math.abs(json.periods.length - this.periods.length);
+      for (let i = 0; i < diff; i++) {
+        if (json.periods.length > this.periods.length) {
+          this.addPeriod();
+        } else {
+          this.removePeriod();
+        }
+      }
+
+      for (let i = 0; i < this.periods.length; i++) {
+        success &= this.periods[i].fromJSON(json.periods[i]);
+      }
       return success;
     }
   }
@@ -580,24 +574,48 @@ $(document).ready(() => {
     }
   }
 
-  // Container for all of the charts of a particular statistic (e.g. person
-  // wealth, company wealth), across all industries
-  class Statistic {
-    // name = one of {person_wealth, company_wealth, unemployment, out_of_business}
+  // Container for attributes of one type of chart
+  class ChartType {
+    // name = the name
     // displayName, {x,y}Label, legend = the title, {x,y}Label, and legend of the ChartComponent
-    // yIndices = when the server provides an array of values for this statistic (e.g. person wealth),
-    //   specify an array of indices to plot. Otherwise (e.g. unemployment), set this to null
-    constructor(name, displayName, xLabel, yLabel, legend, yIndices) {
+    constructor(name, displayName, xLabel, yLabel, legend) {
       this.name = name;
       this.displayName = displayName;
       this.xLabel = xLabel;
       this.yLabel = yLabel;
       this.legend = legend;
-      this.yIndices = yIndices;
+    }
+  }
 
-      // Parallel arrays - the ChartComponent for each industry
-      this.chartComponents = [];
-      this.industries = [];
+  // A group of charts
+  // element = the HTML card containing the charts
+  // charts = an object of ChartComponents, indexed by name, e.g:
+  // {
+  //   "person_money": new ChartComponent(...),
+  //   ...
+  // }
+  class ChartGroup {
+    // name (string) = name of the groups. This will be the title of the card
+    // types (array of ChartTypes)
+    constructor(name, types) {
+      this.element = withPadding(
+        element("div").addClass("card").addClass("border-0")
+        .append(element("div").addClass("card-body")
+          .append(element("h2").addClass("card-title").text(name))
+          .append(element("div").addClass("row"))
+        )
+      );
+
+      this.charts = {};
+
+      types.forEach((t) => {
+        let chart = new ChartComponent(t.displayName, t.legend, t.xLabel, t.yLabel);
+        this.charts[t.name] = chart;
+        $(this.element.find(".row")[0]).append(
+          element("div").addClass("col-md-6")
+          .append(chart.element)
+        );
+      });
     }
   }
 
@@ -613,62 +631,74 @@ $(document).ready(() => {
         .attr("type", "button")
         .text("Run")
         .on("click", () => {
-          // Create charts for each industry in the config
-          let industries = config.periods.periods[0].industries.input.values;
-          let charts = [
-            new Statistic(
-              "person_wealth",
-              "Distribution of wealth across people",
-              "Months",
-              "Dollars",
-              ["Min", "10%", "25%", "50%", "75%", "90%", "Max"],
-              [0, 10, 25, 50, 75, 90, 100]
-            ),
-            new Statistic(
-              "company_wealth",
-              "Distribution of wealth across companies",
-              "Months",
-              "Dollars",
-              ["Min", "10%", "25%", "50%", "75%", "90%", "Max"],
-              [0, 10, 25, 50, 75, 90, 100]
-            ),
-            new Statistic(
-              "unemployment",
-              "Unemployment rate",
-              "Months",
-              "Rate",
-              [""],
-              null
-            ),
-            new Statistic(
-              "out_of_business",
-              "Fraction of companies out of business",
-              "Months",
-              "Fraction",
-              [""],
-              null
-            )
-          ];
-          let chartsElement = withPadding(
-            element("div").addClass("card").addClass("border-0")
-            .append(element("div").addClass("card-body")
-              .append(element("h2").addClass("card-title").text("Results"))
-            )
+          // Create charts
+          let person_money = new ChartType(
+            "person_money",
+            "Distribution of wealth across people",
+            "Months",
+            "Dollars",
+            ["Min", "10%", "25%", "50%", "75%", "90%", "Max"]
           );
-          industries.forEach((industry) => {
-            $(chartsElement.find(".card-body")[0]).append(element("h3").text(industry));
-            charts.forEach((chart) => {
-              let chartComponent = new ChartComponent(chart.displayName, chart.legend, chart.xLabel, chart.yLabel);
-              chart.chartComponents.push(chartComponent);
-              chart.industries.push(industry);
-              chartsElement.append(chartComponent.element);
-            });
+
+          let company_money = new ChartType(
+            "company_money",
+            "Distribution of wealth across companies",
+            "Months",
+            "Dollars",
+            ["Min", "10%", "25%", "50%", "75%", "90%", "Max"]
+          );
+
+          let person_unemployment = new ChartType(
+            "person_unemployment",
+            "Unemployment rate",
+            "Months",
+            "Rate",
+            [""]
+          );
+
+          let company_closures = new ChartType(
+            "company_closures",
+            "Company closure rate",
+            "Months",
+            "Fraction",
+            [""]
+          );
+
+          let charts = {
+            overall: {},
+            income_levels: {},
+            industries: {}
+          };
+
+          // Make overall charts
+          charts.overall = new ChartGroup("Overall", [person_money, company_money, person_unemployment, company_closures]);
+
+          // Make per-income level charts
+          charts.income_levels = {}
+          let income_levels = [];
+          config.income.input.values.forEach((i) => {
+            income_levels.push(i.toString());
+          });
+          income_levels.forEach((i) => {
+            charts.income_levels[i] = new ChartGroup(i, [person_money, person_unemployment]);
+          });
+
+          // Make per-industry charts
+          charts.industries = {};
+          let industries = config.periods[0].industries.input.values;
+          industries.forEach((i) => {
+            charts.industries[i] = new ChartGroup(i, [person_money, company_money, person_unemployment, company_closures]);
           });
 
           // Render charts
           chartsContainer.empty();
-          chartsContainer.append(chartsElement);
-
+          chartsContainer.append(charts.overall.element);
+          income_levels.forEach((i) => {
+            chartsContainer.append(charts.income_levels[i].element);
+          });
+          industries.forEach((i) => {
+            chartsContainer.append(charts.industries[i].element);
+          });
 
           // Send config to the server, and populate results in the charts
           let protocol = (document.location.protocol == "https:") ? "wss:" : "ws:";
@@ -686,24 +716,26 @@ $(document).ready(() => {
               return;
             }
 
-            // Add the new data to each chart
-            charts.forEach((chart) => {
-              for (let i = 0; i < chart.chartComponents.length; i++) {
-                let industry = chart.industries[i];
-                let data = msg.results[industry][chart.name];
+            // Add the new data to the charts
+            let data = msg.data;
 
-                // Extract only the y indices in the plot
-                let newData = [];
-                if (chart.yIndices != null) {
-                  chart.yIndices.forEach((idx) => {
-                    newData.push(data[idx]);
-                  });
-                } else {
-                  newData.push(data);
-                }
+            // Overall charts
+            [person_money, company_money, person_unemployment, company_closures].forEach((t) => {
+              charts.overall.charts[t.name].update(data.overall[t.name]);
+            });
 
-                chart.chartComponents[i].update(newData);
-              }
+            // Per-income level charts
+            income_levels.forEach((i) => {
+              [person_money, person_unemployment].forEach((t) => {
+                charts.income_levels[i].charts[t.name].update(data.income_levels[i][t.name]);
+              });
+            });
+
+            // Industry charts
+            industries.forEach((i) => {
+              [person_money, company_money, person_unemployment, company_closures].forEach((t) => {
+                charts.industries[i].charts[t.name].update(data.industries[i][t.name]);
+              });
             });
           };
         });

@@ -8,26 +8,20 @@ months_per_year = 12
 days_per_month = 30
 defaults = {
   'ncompanies': 10,
-  'employees': [
-    [10],
-    [1]
-  ],
   'income': [
     [65000],
     [1]
   ],
+  'company_size': [
+    [10],
+    [1]
+  ],
   'periods': [
     {
-      'ndays': 360,
+      'duration': 360,
+      'person_stimulus': 1,
+      'company_stimulus': 1,
       'rehire_rate': 1,
-      'people_new_money': [
-        [1],
-        [1]
-      ],
-      'companies_new_money': [
-        [1],
-        [1]
-      ],
       'spending': [
         [[0, 1]],
         [1]
@@ -81,8 +75,8 @@ def reset_spending_rates(people, spending_dist):
 # Initializes the simulator. Returns the list of people and companies
 def init(
   ncompanies=defaults['ncompanies'],
-  employees=defaults['employees'],
   income=defaults['income'],
+  company_size=defaults['company_size'],
   spending=defaults['periods'][0]['spending'],
   industry_names=defaults['periods'][0]['industries'][0]
   ):
@@ -90,9 +84,9 @@ def init(
   # Assign people to companies
   people = []
   companies = [Company(industry=industry_names[i % len(industry_names)]) for i in range(ncompanies)]
-  nemployees = np.random.choice(employees[0], p=employees[1], size=len(companies))
+  size = np.random.choice(company_size[0], p=company_size[1], size=len(companies))
   for i in range(ncompanies):
-    companies[i].employees = [Person(industry=companies[i].industry) for j in range(nemployees[i])]
+    companies[i].employees = [Person(industry=companies[i].industry) for j in range(size[i])]
     people += companies[i].employees
 
   # Assign each person income and spending rates
@@ -102,19 +96,16 @@ def init(
   people = reset_spending_rates(people, spending)
   return people, companies
 
-# Given the list of people and companies, and the distribution of additional
-# money each should get, gives each person and company an amount of additional
-# money drawn from their distribution. Returns the new list of people and
+# Grant stimulus for people and companies. Returns the new list of people and
 # companies.
-def give_new_money(people, companies, people_new_money, companies_new_money):
-  people_months = np.random.choice(people_new_money[0], p=people_new_money[1], size=len(people))
-  for i in range(len(people)):
-    people[i].money += people_months[i] * people[i].income
+def grant_stimulus(people, companies, person_stimulus, company_stimulus):
+  for p in people:
+    p.money += person_stimulus * p.income
 
-  companies_months = np.random.choice(companies_new_money[0], p=companies_new_money[1], size=len(companies))
-  for i in range(len(companies)):
-    payroll = np.sum([e.income for e in companies[i].employees])
-    companies[i].money += companies_months[i] * payroll
+  for c in companies:
+    payroll = np.sum([e.income for e in c.employees])
+    c.money += company_stimulus * payroll
+
   return people, companies
 
 # Given the list of people, companies, and industries each person picks a random
@@ -209,90 +200,55 @@ def pay_employees(people, companies):
       e.money += amount
   return people, companies
 
-# Calculates statistics based on the current state of the model and adds them
-# to the given results. Returns the new results.
-def calculate_stats(results, people, companies):
-  for ind, ind_results in results.items():
-    ind_people = [p for p in people if p.industry == ind]
-    ind_companies = [c for c in companies if c.industry == ind]
-    percentiles = range(0, 101)
-    new_results = {
-      'person_wealth': [0] * len(percentiles) if len(ind_people) == 0 else list(np.percentile([p.money for p in ind_people], percentiles)),
-      'company_wealth': [0] * len(percentiles) if len(ind_companies) == 0 else list(np.percentile([c.money for c in ind_companies], percentiles)),
-      'unemployment': 1 if len(ind_people) == 0 else len([p for p in ind_people if not p.employed]) / len(ind_people),
-      'out_of_business': 1 if len(ind_companies) == 0 else len([c for c in ind_companies if not c.in_business]) / len(ind_companies)
-    }
-    for k in ind_results.keys():
-      ind_results[k].append(new_results[k])
-  return results
-
 # Runs the simulator, given the parameters as defined in design.md; and an
-# optional callback function update_progress, which is called at the end of each
-# day, with the following arguments:
+# optional callback function on_eod, which is called at the end of each day,
+# with the following arguments:
 # - period: the index of the current period (from 0)
 # - day: the index of the current day (from 0)
 # - people: the list of people
 # - companies: the list of companies
-# - results: the dict of results through the current day, as described below.
-# The caller can use this to report progress up a level.
+# The caller can use this to record data and/or report progress up a level.
 #
 # NOTE: Be mindful - these args are passed by reference, so you can technically
 # change them and mess with the simulation. Please don't do that. Read only. I
 # would have passed a copy instead, but it slows down the simulation a lot.
-#
-# Returns a dict of results. Each key is an industry name from industries, and
-# each value is a dict of:
-# - person_wealth: a list of stats, one for each day, where each day is a list
-#   of every percentile of the wealth distribution across people in that
-#   industry.
-# - company_wealth: an analogous list for company wealth
-# - unemployment: a list of unemployment rates in that industry, one for each
-#   day
-# - out_of_business: a list of out-of-business rates (fraction of companies
-#   in that industry that are out of business), one for each day
 def run(
   ncompanies=defaults['ncompanies'],
   income=defaults['income'],
-  employees=defaults['employees'],
+  company_size=defaults['company_size'],
   periods=defaults['periods'],
-  update_progress=lambda period, day, people, companies, results: None
+  on_eod=lambda period, day, people, companies: None
   ):
 
   # Set up simulation
   industry_names = periods[0]['industries'][0]
   people, companies = init(
     ncompanies=ncompanies,
-    employees=employees,
+    company_size=company_size,
     income=income,
     spending=periods[0]['spending'],
     industry_names=industry_names
   )
-  people_new_money = None
-  companies_new_money = None
+  person_stimulus = None
+  company_stimulus = None
   rehire_rate = None
   spending = None
   industries = None
 
   # Run simluation
-  results = {
-    industry: {
-      'person_wealth': [], 'company_wealth': [], 'unemployment': [], 'out_of_business': []
-    } for industry in industry_names
-  }
-  results = calculate_stats(results, people, companies)
   for i in range(len(periods)):
     # Set parameters for this period
-    people_new_money = people_new_money if 'people_new_money' not in periods[i] else periods[i]['people_new_money']
-    companies_new_money = companies_new_money if 'companies_new_money' not in periods[i] else periods[i]['companies_new_money']
+    person_stimulus = person_stimulus if 'person_stimulus' not in periods[i] else periods[i]['person_stimulus']
+    company_stimulus = company_stimulus if 'company_stimulus' not in periods[i] else periods[i]['company_stimulus']
     rehire_rate = rehire_rate if 'rehire_rate' not in periods[i] else periods[i]['rehire_rate']
     spending = spending if 'spending' not in periods[i] else periods[i]['spending']
     industries = industries if 'industries' not in periods[i] else periods[i]['industries']
 
-    # Give additional money for this period
-    people, companies = give_new_money(people, companies, people_new_money, companies_new_money)
+    # Grant stimulus for this period
+    people, companies = grant_stimulus(people, companies, person_stimulus, person_stimulus)
 
     # Run the period
-    for j in range(periods[i]['ndays']):
+    for j in range(periods[i]['duration']):
       ind_companies = {
         ind: [c for c in companies if c.in_business and c.industry == ind]
         for ind in industries[0]
@@ -309,7 +265,4 @@ def run(
         # Reset people's spending rates
         people = reset_spending_rates(people, spending)
 
-      results = calculate_stats(results, people, companies)
-      update_progress(i, j, people, companies, results)
-
-  return results
+      on_eod(i, j, people, companies)

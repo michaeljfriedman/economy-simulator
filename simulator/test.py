@@ -1,12 +1,12 @@
 import simulator
 import sys
 
-def test_init_employee_distribution():
-  print('Check that employees are allocated according to the distribution')
+def test_init_company_size():
+  print('Check that company sizes are allocated according to the distribution')
   low = 10
   high = 20
   p = 0.5
-  people, companies = simulator.init(ncompanies=100, employees=[[low, high], [p, p]])
+  people, companies = simulator.init(ncompanies=100, company_size=[[low, high], [p, p]])
 
   # Check that all people are assigned to a company
   for i in range(len(people)):
@@ -26,8 +26,8 @@ def test_init_employee_distribution():
   lower_bound = len(companies) * (p - tolerance)
   upper_bound = len(companies) * (p + tolerance)
   if not (lower_bound <= nlow <= upper_bound and lower_bound <= nhigh <= upper_bound):
-    print('Failed: employee distribution is off')
-    print('Expected: num employees in each category in [%d, %d]' % (int(lower_bound), int(upper_bound)))
+    print('Failed: company size distribution is off')
+    print('Expected: size in each category in [%d, %d]' % (int(lower_bound), int(upper_bound)))
     print('Actual:   nlow=%d, nhigh=%d' % (nlow, nhigh))
     return
   print('Passed')
@@ -38,7 +38,7 @@ def test_init_income_distribution():
   high = 24
   p = 0.5
   income = [[low, high], [p, p]]
-  people, _ = simulator.init(ncompanies=1, income=income, employees=[[1000], [1]])
+  people, _ = simulator.init(ncompanies=1, income=income, company_size=[[1000], [1]])
 
   nlow = len([p for p in people if p.income == low / simulator.months_per_year])
   nhigh = len([p for p in people if p.income == high / simulator.months_per_year])
@@ -61,7 +61,7 @@ def test_init_spending_distribution():
   people, _ = simulator.init(
     ncompanies=1,
     spending=[[range1, range2], [p, p]],
-    employees=[[1000], [1]]
+    company_size=[[1000], [1]]
   )
 
   nrange1 = len([p for p in people if range1[0] <= p.spending_rate < range1[1]])
@@ -100,30 +100,30 @@ def test_init_industries():
         return
   print('Passed')
 
-def test_new_money():
-  print('Check that new money is allocated according to the distribution')
+def test_stimulus():
+  print('Check that stimulus is granted correctly')
   n = 1000
   income = 1
   init_money = 10
-  low = 1
-  high = 2
-  p = 0.25
+  person_stimulus = 0.8
+  company_stimulus = 0.9
   people = [simulator.Person(money=init_money, income=income) for i in range(n)]
   companies = [simulator.Company(money=init_money, employees=[people[i]]) for i in range(n)]
-  new_money = [[low, high], [p, 1 - p]]
-  people, companies = simulator.give_new_money(people, companies, new_money, new_money)
+  people, companies = simulator.grant_stimulus(people, companies, person_stimulus, company_stimulus)
 
-  # Check that money distributions for people and companies are correct
-  tolerance = 0.05
-  for group_name, group in zip(['people', 'companies'], [people, companies]):
-    for amt, prob in zip(new_money[0], new_money[1]):
-      n_amt = len([x for x in group if x.money == init_money + amt * income])
-      lower_bound = len(group) * (prob - tolerance)
-      upper_bound = len(group) * (prob + tolerance)
-      if not (lower_bound <= n_amt <= upper_bound):
-        print('Failed: %s money distribution is off' % group_name)
-        print('Expected: for amt=%d w/ prob=%.2f, n_amt should be in range [%d, %d]' % (amt, prob, int(lower_bound), int(upper_bound)))
-        print('Actual:   n_amt=%d' % n_amt)
+  # Check that money is correct
+  groups = [
+    ('people', people, person_stimulus),
+    ('companies', companies, company_stimulus)
+  ]
+  for group_name, group, stimulus in groups:
+    expected_money = init_money + stimulus * income
+    nincorrect = len([x for x in group if x.money != expected_money])
+    for x in group:
+      if x.money != expected_money:
+        print('Failed: Someone in %s had wrong amount of money' % (group_name))
+        print('Expected: money=%.2f' % expected_money)
+        print('Actual:   money=%.2f' % x.money)
         return
   print('Passed')
 
@@ -392,11 +392,11 @@ def test_rehire():
 
 # Run all tests
 def main():
-  test_init_employee_distribution()
+  test_init_company_size()
   test_init_income_distribution()
   test_init_spending_distribution()
   test_init_industries()
-  test_new_money()
+  test_stimulus()
   test_people_spending1()
   test_people_spending2()
   test_people_spending_when_out_of_business()
