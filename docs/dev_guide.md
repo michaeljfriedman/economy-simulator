@@ -142,6 +142,8 @@ Example:
 
 ## Web app
 
+### Frontend
+
 The web app is just one page that inputs the parameters and plots the outputs
 live as the simulation runs. It has two main endpoints: one for the main page,
 and one WebSocket endpoint for running the simulator.
@@ -156,4 +158,13 @@ The frontend (index.{html, js}) is implemented with jQuery. A different class
 is defined for each component (e.g. a card), which tracks the inputs and the
 HTML element for that component. (In that sense, it's kind of like React, but
 just done with jQuery. Why not just use React, you may ask - at the time I
-didn't want to have to learn React, so this was faster for me `¯\_(ツ)_/¯`)
+didn't want to have to learn React, so this was faster for me... Not the best
+excuse, I know.)
+
+### Deployment
+
+The master branch of the app is deployed on Heroku. You can run it locally with:
+
+```bash
+heroku local
+```

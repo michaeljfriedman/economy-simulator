@@ -2,7 +2,7 @@
 
 This project simulates the economy using a simplified model. Our goal is to
 see what happens to the distribution of wealth across people and companies, the
-the unemployment rate, and the company survival rate, when you vary certain
+the unemployment rate, and the business closure rate, when you vary certain
 parameters.
 
 This README covers how the simulation is designed and how to run it. For
@@ -28,13 +28,20 @@ We're primarily interested in two things:
 
 1. Understanding a "normal" economy: Under "normal" conditions, where does the
    money go (the distribution of wealth across people, companies, and
-   industries), how does the unemployment rate look, and how does company
-   survival rate look (do some companies die out)? Is there an equilibrium?
-   Which variables affect this outcome (e.g. number of companies, income
-   distribution, etc.)?
-2. The effects of a shutdown (e.g. during a [pandemic](https://www.wsj.com/graphics/march-changed-everything/)):
-   What happens if consumers are temporarily blocked from spending in certain
-   industries?
+   industries), how does the unemployment rate look, and how many businesses
+   close down? Is there an equilibrium? Which variables affect this outcome
+   (e.g. number of companies, income distribution, etc.)?
+2. The effects of a shutdown (e.g. during the [COVID-19 pandemic](https://www.wsj.com/graphics/march-changed-everything/)).
+   During this pandemic, many governments have shut down or hampered large
+   sectors of their economy, and there are raging debates over whether and how
+   to correct for the consequences ([stimulus checks & unemployment benefits](https://www.economist.com/united-states/2020/05/16/inefficiencies-bedevil-americas-response-to-soaring-joblessness),
+   [loans for small businesses](https://nymag.com/intelligencer/2020/04/the-small-business-loan-programs-big-problems-explained.html), etc.).
+   In this model, we're interested in the effects of certain government actions
+   on unemployment and the survival of businesses. What happens if consumers are
+   temporarily blocked from spending in certain industries? What happens if we
+   grant people and companies "stimulus checks" to compensate for lost income
+   and lost revenue during that time? What happens if we tweak the unemployment
+   benefits?
 
 ### Simulation algorithm
 
