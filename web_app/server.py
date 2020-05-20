@@ -87,21 +87,17 @@ def run_simulator(ws):
         people_results(people, percentiles),
         company_results(companies, percentiles)
       ]),
-      'income_levels': [
-        merge([
-          {'income_level': i},
-          people_results([p for p in people if p.income == i], percentiles)
-        ])
+      'income_levels': {
+        str(int(simulator.months_per_year * i)): people_results([p for p in people if p.income == i], percentiles)
         for i in income_levels
-      ],
-      'industries': [
-        merge([
-          {'industry': i},
+      },
+      'industries': {
+        i: merge([
           people_results([p for p in people if p.industry == i], percentiles),
           company_results([c for c in companies if c.industry == i], percentiles)
         ])
         for i in industries
-      ]
+      }
     }
     msg = json.dumps({'data': data, 'period': period, 'day': day})
     try:

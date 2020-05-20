@@ -587,6 +587,38 @@ $(document).ready(() => {
     }
   }
 
+  // A group of charts
+  // element = the HTML card containing the charts
+  // charts = an object of ChartComponents, indexed by name, e.g:
+  // {
+  //   "person_money": new ChartComponent(...),
+  //   ...
+  // }
+  class ChartGroup {
+    // name (string) = name of the groups. This will be the title of the card
+    // types (array of ChartTypes)
+    constructor(name, types) {
+      this.element = withPadding(
+        element("div").addClass("card").addClass("border-0")
+        .append(element("div").addClass("card-body")
+          .append(element("h2").addClass("card-title").text(name))
+          .append(element("div").addClass("row"))
+        )
+      );
+
+      this.charts = {};
+
+      types.forEach((t) => {
+        let chart = new ChartComponent(t.displayName, t.legend, t.xLabel, t.yLabel);
+        this.charts[t.name] = chart;
+        $(this.element.find(".row")[0]).append(
+          element("div").addClass("col-md-6")
+          .append(chart.element)
+        );
+      });
+    }
+  }
+
   // "Run" button sends a the config to the server and displays the results
   // as it runs
   class RunButton {
@@ -599,60 +631,74 @@ $(document).ready(() => {
         .attr("type", "button")
         .text("Run")
         .on("click", () => {
-          // Create charts for each industry in the config
-          let industries = config.periods[0].industries.input.values;
-          let chartTypes = [
-            new ChartType(
-              "person_money",
-              "Distribution of wealth across people",
-              "Months",
-              "Dollars",
-              ["Min", "10%", "25%", "50%", "75%", "90%", "Max"]
-            ),
-            new ChartType(
-              "company_money",
-              "Distribution of wealth across companies",
-              "Months",
-              "Dollars",
-              ["Min", "10%", "25%", "50%", "75%", "90%", "Max"]
-            ),
-            new ChartType(
-              "person_unemployment",
-              "Unemployment rate",
-              "Months",
-              "Rate",
-              [""]
-            ),
-            new ChartType(
-              "company_closures",
-              "Company closure rate",
-              "Months",
-              "Fraction",
-              [""]
-            )
-          ];
-          let chartsOverall = {
-            element: withPadding(
-              element("div").addClass("card").addClass("border-0")
-              .append(element("div").addClass("card-body")
-                .append(element("h2").addClass("card-title").text("Overall results"))
-                .append(element("div").addClass("row"))
-              )
-            )
+          // Create charts
+          let person_money = new ChartType(
+            "person_money",
+            "Distribution of wealth across people",
+            "Months",
+            "Dollars",
+            ["Min", "10%", "25%", "50%", "75%", "90%", "Max"]
+          );
+
+          let company_money = new ChartType(
+            "company_money",
+            "Distribution of wealth across companies",
+            "Months",
+            "Dollars",
+            ["Min", "10%", "25%", "50%", "75%", "90%", "Max"]
+          );
+
+          let person_unemployment = new ChartType(
+            "person_unemployment",
+            "Unemployment rate",
+            "Months",
+            "Rate",
+            [""]
+          );
+
+          let company_closures = new ChartType(
+            "company_closures",
+            "Company closure rate",
+            "Months",
+            "Fraction",
+            [""]
+          );
+
+          let charts = {
+            overall: {},
+            income_levels: {},
+            industries: {}
           };
-          chartTypes.forEach((type) => {
-            let chart = new ChartComponent(type.displayName, type.legend, type.xLabel, type.yLabel);
-            $(chartsOverall.element.find(".row")[0]).append(
-              element("div").addClass("col-md-6")
-              .append(chart.element)
-            );
-            chartsOverall[type.name] = chart;
+
+          // Make overall charts
+          charts.overall = new ChartGroup("Overall", [person_money, company_money, person_unemployment, company_closures]);
+
+          // Make per-income level charts
+          charts.income_levels = {}
+          let income_levels = [];
+          config.income.input.values.forEach((i) => {
+            income_levels.push(i.toString());
+          });
+          income_levels.forEach((i) => {
+            charts.income_levels[i] = new ChartGroup(i, [person_money, person_unemployment]);
+          });
+
+          // Make per-industry charts
+          charts.industries = {};
+          let industries = config.periods[0].industries.input.values;
+          industries.forEach((i) => {
+            charts.industries[i] = new ChartGroup(i, [person_money, company_money, person_unemployment, company_closures]);
           });
 
           // Render charts
           chartsContainer.empty();
-          chartsContainer.append(chartsOverall.element);
-
+          chartsContainer.append(charts.overall.element);
+          income_levels.forEach((i) => {
+            chartsContainer.append(charts.income_levels[i].element);
+          });
+          industries.forEach((i) => {
+            chartsContainer.append(charts.industries[i].element);
+          });
 
           // Send config to the server, and populate results in the charts
           let protocol = (document.location.protocol == "https:") ? "wss:" : "ws:";
@@ -671,10 +717,25 @@ $(document).ready(() => {
             }
 
             // Add the new data to the charts
-            let data = msg.data.overall;
-            console.log(data);
-            Object.keys(data).forEach((type) => {
-              chartsOverall[type].update(data[type]);
+            let data = msg.data;
+
+            // Overall charts
+            [person_money, company_money, person_unemployment, company_closures].forEach((t) => {
+              charts.overall.charts[t.name].update(data.overall[t.name]);
+            });
+
+            // Per-income level charts
+            income_levels.forEach((i) => {
+              [person_money, person_unemployment].forEach((t) => {
+                charts.income_levels[i].charts[t.name].update(data.income_levels[i][t.name]);
+              });
+            });
+
+            // Industry charts
+            industries.forEach((i) => {
+              [person_money, company_money, person_unemployment, company_closures].forEach((t) => {
+                charts.industries[i].charts[t.name].update(data.industries[i][t.name]);
+              });
             });
           };
         });
