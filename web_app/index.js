@@ -349,7 +349,7 @@ $(document).ready(() => {
       this.personStimulus = new Var("person_stimulus", new NumberInput("float", "Person stimulus", 0));
       this.companyStimulus = new Var("company_stimulus", new NumberInput("float", "Company stimulus", 0));
       this.rehireRate = new Var("rehire_rate", new NumberInput("float", "Rehire rate", 0));
-      this.spending = new Var("spending", new DistributionInputs("range", "Spending distribution"));
+      this.spendingInclination = new Var("spending_inclination", new NumberInput("float", "Inclination to spend", 0));
       this.industries = new Var("industries", new DistributionInputs("string", "Industry distribution"));
 
       this.element = withPadding(
@@ -360,22 +360,10 @@ $(document).ready(() => {
           .append(this.personStimulus.input.element)
           .append(this.companyStimulus.input.element)
           .append(this.rehireRate.input.element)
-          .append(this.spending.input.element)
+          .append(this.spendingInclination.input.element)
           .append(this.industries.input.element)
         )
       );
-    }
-
-    // Sets the value from a JSON object. Returns true/false if successful
-    fromJSON(json) {
-      let success = true;
-      success &= this.duration.set(json.duration);
-      success &= this.personStimulus.set(json.person_stimulus);
-      success &= this.companyStimulus.set(json.company_stimulus);
-      success &= this.rehireRate.set(json.rehire_rate);
-      success &= this.spending.set(json.spending);
-      success &= this.industries.set(json.industries);
-      return success;
     }
   }
 
@@ -468,10 +456,7 @@ $(document).ready(() => {
           person_stimulus: p.personStimulus.input.value,
           company_stimulus: p.companyStimulus.input.value,
           rehire_rate: p.rehireRate.input.value,
-          spending: [
-            p.spending.input.values,
-            p.spending.input.probabilities
-          ],
+          spending_inclination: p.spendingInclination.input.value,
           industries: [
             p.industries.input.values,
             p.industries.input.probabilities
@@ -500,9 +485,17 @@ $(document).ready(() => {
       }
 
       for (let i = 0; i < this.periods.length; i++) {
-        success &= this.periods[i].fromJSON(json.periods[i]);
+        success &= this.periods[i].duration.set(json.periods[i].duration);
+        success &= this.periods[i].personStimulus.set(json.periods[i].person_stimulus);
+        success &= this.periods[i].companyStimulus.set(json.periods[i].company_stimulus);
+        success &= this.periods[i].rehireRate.set(json.periods[i].rehire_rate);
+        success &= this.periods[i].spendingInclination.set(json.periods[i].spending_inclination);
+        success &= this.periods[i].industries.set(json.periods[i].industries);
       }
-      return success;
+
+      if (!success) {
+        throw Error("failed to parse config");
+      }
     }
   }
 
