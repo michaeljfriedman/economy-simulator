@@ -759,7 +759,7 @@ $(document).ready(() => {
             let msg = JSON.parse(e.data);
 
             // Only plot the first day of each month
-            if (msg.day != 0 && msg.day % 30 != 1) {
+            if (msg.day % 30 != 0) {
               return;
             }
 

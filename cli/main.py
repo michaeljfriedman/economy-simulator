@@ -46,7 +46,7 @@ def main(argv):
   company_money = [[] for i in range(total_ndays)]
   company_closures = [[] for i in range(total_ndays)]
   t = tqdm(total=total_ndays)
-  def on_eod(period, day, people, companies):
+  def on_day(period, day, people, companies):
     i = simulator.days_per_month * period + day
     for p in people:
       if period == 0 and day == 0:
@@ -66,7 +66,7 @@ def main(argv):
     income=config['income'],
     company_size=config['company_size'],
     periods=config['periods'],
-    on_eod=on_eod
+    on_day=on_day
   )
   t.close()
 

@@ -77,8 +77,8 @@ def run_simulator(ws):
       'company_closures': [np.mean([not c.in_business for c in companies])]
     }
 
-  # eod callback computes results from the day and sends to the client
-  def on_eod(period, day, people, companies):
+  # Callback computes results from the day and sends to the client
+  def on_day(period, day, people, companies):
     percentiles = [0, 10, 25, 50, 75, 90, 100]
     income_levels = set([p.income for p in people])
     industries = set([c.industry for c in companies])
@@ -111,6 +111,6 @@ def run_simulator(ws):
     income=config['income'],
     company_size=config['company_size'],
     periods=config['periods'],
-    on_eod=on_eod
+    on_day=on_day
   )
   ws.close()

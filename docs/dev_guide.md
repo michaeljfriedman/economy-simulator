@@ -58,8 +58,8 @@ test.py.
 
 The simulator just runs the simulation and tracks the model, but doesn't report
 any results itself. To get results, clients of the simulator can pass a callback
-function `on_eod`, which is called at the end of each day. This function can be
-used to track progress and/or record data for reporting later.
+function `on_day`, which is called at the start of each day. This function can
+be used to track progress and/or record data for reporting later.
 
 ## CLI
 
@@ -140,7 +140,7 @@ The WebSocket is used to maintain a connection so that the server can send live
 updates as the simulator runs. Once a connection to the WebSocket is opened, the
 client (index.js) sends the config from the frontend to the server (server.py),
 and the server parses it and starts the simulator, sending live updates back to
-the client each day using the simulator's `on_eod` callback.
+the client each day using the simulator's `on_day` callback.
 
 The frontend (index.{html, js}) is implemented with jQuery. A different class
 is defined for each component (e.g. a card), which tracks the inputs and the

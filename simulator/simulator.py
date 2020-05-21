@@ -203,7 +203,7 @@ def pay_employees(people, companies):
   return people, companies
 
 # Runs the simulator, given the parameters as defined in design.md; and an
-# optional callback function on_eod, which is called at the end of each day,
+# optional callback function on_day, which is called at the start of each day,
 # with the following arguments:
 # - period: the index of the current period (from 0)
 # - day: the index of the current day (from 0)
@@ -219,7 +219,7 @@ def run(
   income=defaults['income'],
   company_size=defaults['company_size'],
   periods=defaults['periods'],
-  on_eod=lambda period, day, people, companies: None
+  on_day=lambda period, day, people, companies: None
   ):
 
   # Set up simulation
@@ -251,6 +251,8 @@ def run(
 
     # Run the period
     for j in range(periods[i]['duration']):
+      on_day(i, j, people, companies)
+
       ind_companies = {
         ind: [c for c in companies if c.in_business and c.industry == ind]
         for ind in industries[0]
@@ -266,5 +268,3 @@ def run(
 
         # Reset people's spending rates
         people = reset_spending_rates(people, spending_inclination)
-
-      on_eod(i, j, people, companies)
