@@ -257,7 +257,7 @@ def run(
     industries = industries if 'industries' not in periods[i] else periods[i]['industries']
 
     # Grant stimulus/unemployment benefits for this period
-    people, companies = grant_stimulus(people, companies, person_stimulus, person_stimulus)
+    people, companies = grant_stimulus(people, companies, person_stimulus, company_stimulus)
 
     # Run the period
     for j in range(periods[i]['duration']):
