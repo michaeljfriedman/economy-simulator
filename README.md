@@ -23,12 +23,15 @@ various metrics about the economy.
 The basic model works like this. There are two kinds of entities: *people* and
 *companies*. Each person works for a company, and receives a paycheck from it
 each month. They spend a portion of their money at different companies during
-the course of each month, saving anything they have leftover. Companies lay off
-employees when they can no longer afford to pay them, hire new ones if they can
-afford to, and go out of business when they have no more employees. Each company
-also belongs to an industry, and we can tweak the amount people spend in each
-industry. We run this system for a fixed period of time. People and companies
-may build wealth, scrape by, or collapse, according to this probabilistic model.
+the course of each month, saving anything they have leftover. Companies have two
+kinds of expenses: payroll (paychecks to their employees) and nonpayroll
+(expenses paid to other companies, e.g. for goods & services, paid daily).
+Companies lay off employees when they can no longer afford to pay them, hire new
+ones if they can afford to, and go out of business when they have no more
+employees. Each company also belongs to an industry, and we can tweak the amount
+people spend in each industry. We run this system for a fixed period of time.
+People and companies may build wealth, scrape by, or collapse, according to this
+probabilistic model.
 
 We're primarily interested in two things:
 
@@ -53,24 +56,31 @@ We're primarily interested in two things:
 
 Initialization:
 
-- Each company is assigned to an industry and is assigned a number of employees
-  from a distribution
+- Each company is assigned an industry, a number of employees from a
+  distribution, and a "network" of other companies they'll pay their non-payroll
+  expenses to (chosen at random)
 - Each person is assigned income and an initial spending rate for the first
   month, both from a distribution
-- Both people and companies get some months' worth of money (income for people,
-  payroll for companies), chosen from a distribution
+- Both people and companies get a specified number of months' worth of money
+  (income for people, total expenses for companies)
 
 Each day:
 
 - Each person picks an industry to spend in from a distribution, and picks a
   random company within that industry. They spend 1/30 of their monthly
   spending to that company (this model has 30 days per month)
-- At the end of the month, companies rehire unemployed people if they can afford
-  them, and pay their employees 1 month's income. If they don't have enough
-  money to cover payroll, they pick a random person to lay off until they do. If
-  they run out of employees, they go out of business (removed from the economy).
-  People pick a new spending rate for the next month, and receive stimulus
-  grants and/or unemployment benefits if applicable.
+- Each company pays 1/30 of their monthly non-payroll expenses to the other
+  companies in their network (dividing equally among them). If they don't have
+  enough money to cover the expenses, they pick a random person to lay off until
+  they do. If they run out of employees, they go out of business (removed from
+  the economy).
+
+At the end of each month:
+
+- Companies rehire unemployed people if they can afford them, and pay their
+  employees 1 month's income (similarly laying off employees if they can't
+  afford the expenses). People pick a new spending rate for the next month, and
+  receive stimulus grants and/or unemployment benefits if applicable.
 
 ## Running a simulation
 
@@ -93,7 +103,15 @@ parameters, which apply for the entire simulation:
   month.
 - **Company size**: a distribution of companies' size (the number of employees
   they have). For example, you could say that 1/3 of companies have 100
-  employees, and 1/3 have 1,000, and 1/3 have 10,000.
+  employees, and 1/3 have 1,000, and 1/3 have 10,000. The size of the company
+  and the income levels of their employees determine their payroll expenses.
+- **Company non-payroll expenses**: the percentage of each company's monthly
+  expenses contributed by non-payroll expenses. This allows you to specify how
+  much additional expense companies have aside from paying their employees.
+- **Company network size**: the number of other companies each company pays
+  expenses to. Everyone in a company's network gets paid an equal fraction of
+  their nonpayroll expenses. This represents companies paying each other for
+  goods/services.
 
 Then you specify a number of *periods* - a limited duration for which certain
 parameters apply. The periods run in the order listed, and each has the
