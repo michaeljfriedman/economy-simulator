@@ -95,6 +95,7 @@ Periods:
   - `duration` (int)
   - `person_stimulus` (float)
   - `company_stimulus` (float)
+  - `unemployment_benefit` (float)
   - `rehire_rate` (float)
   - `spending_inclination` (float)
   - `industries` (distribution)
@@ -117,6 +118,7 @@ Example:
       "duartion": 360,
       "person_stimulus": 1.0,
       "company_stimulus": 1.0,
+      "unemployment_benefit": 0,
       "rehire_rate": 1.0,
       "spending_inclination": 0.5,
       "industries": [

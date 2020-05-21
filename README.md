@@ -69,7 +69,8 @@ Each day:
   them, and pay their employees 1 month's income. If they don't have enough
   money to cover payroll, they pick a random person to lay off until they do. If
   they run out of employees, they go out of business (removed from the economy).
-  People pick a new spending rate for the next month.
+  People pick a new spending rate for the next month, and receive stimulus
+  grants and/or unemployment benefits if applicable.
 
 ## Running a simulation
 
@@ -107,6 +108,8 @@ value is used.
   income), and in later periods, this can simulate stimulus checks.
 - **Stimulus for companies**: analogous number for companies, as a fraction of
   monthly payroll.
+- **Unemployment benefit**: a stimulus that's applied only to *unemployed*
+  people, also specified as a fraction of monthly income.
 - **Rehire rate**: the probability that an unemployed person is rehired when an
   opening comes up.
 - **Inclination to spend**: the average percentage of their money that each
