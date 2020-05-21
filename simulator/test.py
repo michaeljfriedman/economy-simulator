@@ -53,27 +53,23 @@ def test_init_income_distribution():
     return
   print('Passed')
 
-def test_init_spending_distribution():
-  print('Check that spending rates are allocated according to the distribution')
-  range1 = [0, 0.25]
-  range2 = [0.25, 1]
-  p = 0.5
+def test_init_spending_inclination(s):
+  print('Check that spending rates are allocated according to the spending inclination: %.2f' % (s))
   people, _ = simulator.init(
     ncompanies=1,
-    spending=[[range1, range2], [p, p]],
+    spending_inclination=s,
     company_size=[[1000], [1]]
   )
 
-  nrange1 = len([p for p in people if range1[0] <= p.spending_rate < range1[1]])
-  nrange2 = len([p for p in people if range2[0] <= p.spending_rate < range2[1]])
-  tolerance = 0.04
-  lower_bound = len(people) * (p - tolerance)
-  upper_bound = len(people) * (p + tolerance)
+  avg = sum([p.spending_rate for p in people]) / len(people)
+  tolerance = 0.01
+  lower_bound = s - tolerance
+  upper_bound = s + tolerance
 
-  if not (lower_bound <= nrange1 <= upper_bound and lower_bound <= nrange2 <= upper_bound):
-    print('Failed: spending rate distribution is off')
-    print('Expected: npeople in each category in [%d, %d]' % (int(lower_bound), int(upper_bound)))
-    print('Actual:   nrange1=%d, nrange2=%d' % (nrange1, nrange2))
+  if not (lower_bound <= avg <= upper_bound):
+    print('Failed: spending inclination is off')
+    print('Expected: average spending rate in range [%.4f, %.4f]' % (lower_bound, upper_bound))
+    print('Actual:   average spending rate = %.4f' % (avg))
     return
   print('Passed')
 
@@ -394,7 +390,9 @@ def test_rehire():
 def main():
   test_init_company_size()
   test_init_income_distribution()
-  test_init_spending_distribution()
+  test_init_spending_inclination(0.5)
+  test_init_spending_inclination(0.2)
+  test_init_spending_inclination(0.9)
   test_init_industries()
   test_stimulus()
   test_people_spending1()
