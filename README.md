@@ -113,7 +113,8 @@ value is used.
   person will spend each month. For example, setting this to 50% means that
   people will, on average, spend 50% of their money each month. The actual
   percentage that each person spends is different each month, drawn uniformly
-  from the largest range between 0 and 1 whose center is at this number.
+  from a range between 0 and 1, squashed on one end so that it centers at this
+  number.
 - **Industry distribution**: the distribution of how likely a person is to spend
   money in a particular industry. So for example, if you had 5 industries, 4
   that each have 25% probability, and 1 with 0%, this would simulate the effect
