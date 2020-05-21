@@ -108,8 +108,8 @@ value is used.
   income), and in later periods, this can simulate stimulus checks.
 - **Stimulus for companies**: analogous number for companies, as a fraction of
   monthly payroll.
-- **Unemployment benefit**: a stimulus that's applied only to *unemployed*
-  people, also specified as a fraction of monthly income.
+- **Unemployment benefit**: a stimulus that's granted each month, only to
+  *unemployed* people. Also specified as a fraction of monthly income.
 - **Rehire rate**: the probability that an unemployed person is rehired when an
   opening comes up.
 - **Inclination to spend**: the average percentage of their money that each

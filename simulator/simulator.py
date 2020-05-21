@@ -258,7 +258,6 @@ def run(
 
     # Grant stimulus/unemployment benefits for this period
     people, companies = grant_stimulus(people, companies, person_stimulus, person_stimulus)
-    people = grant_unemployment(people, unemployment_benefit)
 
     # Run the period
     for j in range(periods[i]['duration']):
@@ -276,6 +275,9 @@ def run(
         people, companies = rehire_people(people, companies, rehire_rate)
         people, companies = layoff_employees(people, companies)
         people, companies = pay_employees(people, companies)
+
+        # Grant unemployment benefits
+        people = grant_unemployment(people, unemployment_benefit)
 
         # Reset people's spending rates
         people = reset_spending_rates(people, spending_inclination)
