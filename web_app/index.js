@@ -11,6 +11,30 @@ $(document).ready(() => {
     config: "config"
   };
 
+  const defaultConfig = {
+    ncompanies: 100,
+    income: [
+      [50000],
+      [1]
+    ],
+    company_size: [
+      [10],
+      [1]
+    ],
+    periods: [{
+      duration: 360,
+      person_stimulus: 1,
+      company_stimulus: 1,
+      unemployment_benefit: 0.8,
+      rehire_rate: 0.8,
+      spending_inclination: 0.5,
+      spending_distribution: [
+        ["industry 1"],
+        [1]
+      ]
+    }]
+  };
+
   // Creates a new jQuery element
   let element = function(name) {
     return $(document.createElement(name));
@@ -22,11 +46,11 @@ $(document).ready(() => {
       .append(child);
   };
 
-  // An input for a number variable, given its type (integer or float),
-  // display name and default value.
+  // An input for a number variable, given its type (integer or float) and
+  // display name.
   class NumberInput {
-    constructor(type, displayName, defaultValue) {
-      this.value = defaultValue;
+    constructor(displayName, type) {
+      this.value = 0;
       this.element = null;
 
       let label = element("h4").addClass("card-title")
@@ -71,10 +95,10 @@ $(document).ready(() => {
     }
   }
 
-  // An input for a percentage, given its display name and default value.
+  // An input for a percentage, given its display name.
   class PercentageInput {
-    constructor(displayName, defaultValue) {
-      this.value = defaultValue;
+    constructor(displayName) {
+      this.value = 0;
       this.element = null;
 
       let label = element("h4").addClass("card-title")
@@ -125,13 +149,13 @@ $(document).ready(() => {
     }
   }
 
-  // An input for one (value, probability) pair in a distribution, given
-  // its name
+  // An input for one (value, probability) pair in a distribution, given its
+  // type
   class DistributionInputPair {
-    // type is one of {"integer", "float", "string", "range"}
-    constructor(type, defaultValue, defaultProbability) {
-      this.value = JSON.parse(JSON.stringify(defaultValue)); // copy defaultValue
-      this.probability = defaultProbability;
+    // type is one of {"integer", "float", "string"}
+    constructor(type) {
+      this.value = (type == "string")? "" : 0;
+      this.probability = 0;
       this.type = type;
 
       // Makes a single input element
@@ -155,19 +179,7 @@ $(document).ready(() => {
       };
 
       let value;
-      if (this.type == "range") {
-        // Make 2 number inputs for the endpoints of the range
-        value = element("div").addClass("row")
-          .append(element("div").addClass("col")
-            .append(input("float", this.value[0], (e) => {
-              this.value[0] = e.currentTarget.valueAsNumber;
-            }))
-          ).append(element("div").addClass("col")
-            .append(input("float", this.value[1], (e) => {
-              this.value[1] = e.currentTarget.valueAsNumber;
-            }))
-          );
-      } else if (this.type == "integer" || this.type == "float") {
+      if (this.type == "integer" || this.type == "float") {
         value = input(this.type, this.value, (e) => {
           this.value = e.currentTarget.valueAsNumber;
         });
@@ -228,18 +240,10 @@ $(document).ready(() => {
       this.probability = probability;
       let inputs = this.element.find("input");
       let label = this.element.find("span");
-      if (this.type == "range") {
-        inputs[0].value = value[0];
-        inputs[1].value = value[1];
-        let p = 100 * probability;
-        inputs[2].value = p;
-        label.text(this.probStr(p))
-      } else {
-        inputs[0].value = value;
-        let p = 100 * probability;
-        inputs[1].value = p;
-        label.text(this.probStr(p));
-      }
+      inputs[0].value = value;
+      let p = 100 * probability;
+      inputs[1].value = p;
+      label.text(this.probStr(p));
       return true;
     }
   }
@@ -275,7 +279,7 @@ $(document).ready(() => {
   // A container for all the inputs in a distribution
   class DistributionInput {
     // type is one of the values accepted by DistributionInputPair
-    constructor(type, displayName) {
+    constructor(displayName, type) {
       this.type = type;
       this.values = [];
       this.probabilities = [];
@@ -309,27 +313,14 @@ $(document).ready(() => {
     }
 
     add() {
-      // Set default values based on the type
-      let defaultValue;
-      if (this.type == "integer" || this.type == "float") {
-        defaultValue = 0;
-      } else if (this.type == "string") {
-        defaultValue = "";
-      } else if (this.type == "range") {
-        defaultValue = [0, 0];
-      } else {
-        console.error("type '" + this.type + "' not supported");
-      }
-      let defaultProbability = 0;
-
       let nextIndex = this.inputs.length;
-      let input = new DistributionInputPair(this.type, defaultValue, defaultProbability);
+      let input = new DistributionInputPair(this.type);
       input.onInput(() => {
         this.values[nextIndex] = input.value;
         this.probabilities[nextIndex] = input.probability;
       });
-      this.values.push(defaultValue);
-      this.probabilities.push(defaultProbability);
+      this.values.push(input.value);
+      this.probabilities.push(input.probability);
       this.inputs.push(input);
       $(this.element.find(".card-body")[0]).append(input.element);
     }
@@ -399,13 +390,13 @@ $(document).ready(() => {
   class Period {
     // index = index of this period (for display)
     constructor(index) {
-      this.duration = new Var("duration", new NumberInput("integer", "Number of days", 0));
-      this.person_stimulus = new Var("person_stimulus", new NumberInput("float", "Person stimulus", 0));
-      this.company_stimulus = new Var("company_stimulus", new NumberInput("float", "Company stimulus", 0));
-      this.unemployment_benefit = new Var("unemployment_benefit", new NumberInput("float", "Unemployment benefit", 0))
-      this.rehire_rate = new Var("rehire_rate", new NumberInput("float", "Rehire rate", 0));
-      this.spending_inclination = new Var("spending_inclination", new PercentageInput("Inclination to spend", 0));
-      this.spending_distribution = new Var("spending_distribution", new DistributionInput("string", "Spending distribution across industries"));
+      this.duration = new Var("duration", new NumberInput("Number of days", "integer"));
+      this.person_stimulus = new Var("person_stimulus", new NumberInput("Person stimulus", "float"));
+      this.company_stimulus = new Var("company_stimulus", new NumberInput("Company stimulus", "float"));
+      this.unemployment_benefit = new Var("unemployment_benefit", new NumberInput("Unemployment benefit", "float"))
+      this.rehire_rate = new Var("rehire_rate", new NumberInput("Rehire rate", "float"));
+      this.spending_inclination = new Var("spending_inclination", new PercentageInput("Inclination to spend"));
+      this.spending_distribution = new Var("spending_distribution", new DistributionInput("Spending distribution across industries", "string"));
 
       this.element = withPadding(
         element("div").addClass("card")
@@ -426,9 +417,9 @@ $(document).ready(() => {
   // A container for the entire config
   class Config {
     constructor() {
-      this.ncompanies = new Var("ncompanies", new NumberInput("integer", "Number of companies", 0));
-      this.income = new Var("income", new DistributionInput("integer", "Income levels"));
-      this.company_size = new Var("company_size", new DistributionInput("integer", "Company size"));
+      this.ncompanies = new Var("ncompanies", new NumberInput("Number of companies", "integer"));
+      this.income = new Var("income", new DistributionInput("Income levels", "integer"));
+      this.company_size = new Var("company_size", new DistributionInput("Company size", "integer"));
       this.periods = [];
 
       let periodButtons = new AddRemoveButtons(
@@ -471,7 +462,8 @@ $(document).ready(() => {
         ))
       ).append(this.periodsContainer);
 
-      this.addPeriod();
+      // Set default values
+      this.fromJSON(defaultConfig);
     }
 
     addPeriod() {
