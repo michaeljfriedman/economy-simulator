@@ -118,11 +118,11 @@ value is used.
   percentage that each person spends is different each month, drawn uniformly
   from a range between 0 and 1, squashed on one end so that it centers at this
   number.
-- **Industry distribution**: the distribution of how likely a person is to spend
-  money in a particular industry. So for example, if you had 5 industries, 4
-  that each have 25% probability, and 1 with 0%, this would simulate the effect
-  of blocking spending in a particular industry (e.g. if it's temporarily shut
-  down).
+- **Spending distribution across industries**: the distribution of which
+  industries people will spend their money in. For example, if you had 5
+  industries, 4 that each have 25% probability, and 1 with 0%, this would
+  simulate the effect of blocking spending in a particular industry (e.g. if
+  it's temporarily shut down).
 
 The web app has boxes where you can set each of these parameters. For the CLI,
 you'll need to write a config file that sets these parameters. See the

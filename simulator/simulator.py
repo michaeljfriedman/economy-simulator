@@ -24,7 +24,7 @@ defaults = {
       'unemployment_benefit': 0,
       'rehire_rate': 1,
       'spending_inclination': 0.5,
-      'industries': [
+      'spending_distribution': [
         ['whole_economy'],
         [1]
       ],
@@ -81,7 +81,7 @@ def init(
   income=defaults['income'],
   company_size=defaults['company_size'],
   spending_inclination=defaults['periods'][0]['spending_inclination'],
-  industry_names=defaults['periods'][0]['industries'][0]
+  industry_names=defaults['periods'][0]['spending_distribution'][0]
   ):
 
   # Assign people to companies
@@ -118,18 +118,18 @@ def grant_unemployment(people, unemployment_benefit):
       p.money += unemployment_benefit * p.income
   return people
 
-# Given the list of people, companies, and industries each person picks a random
-# company within an industry chosen from the industry distribution, and spends a
-# portion of their monthly spending at that company. Returns the new list of
-# people and companies.
-# - ind_companies: a dict {industry: [list of companies in business in that industry]}
-def spend(people, companies, industries, ind_companies):
+# Given the list of people, companies, and the spending distribution each person
+# picks a random company within an industry chosen from the distribution, and
+# spends a portion of their monthly spending at that company. Returns the new
+# list of people and companies.
+# - industries: a dict {industry: [list of companies in business in that industry]}
+def spend(people, companies, spending_distribution, industries):
   in_business = [c for c in companies if c.in_business]
   if len(in_business) != 0:
-    rand_inds = np.random.choice(industries[0], p=industries[1], size=len(people))
+    rand_inds = np.random.choice(spending_distribution[0], p=spending_distribution[1], size=len(people))
     rands = np.random.rand(len(people)) # random numbers used to pick a company for each person
     for p, rand_ind, r in zip(people, rand_inds, rands):
-      ind = ind_companies[rand_ind]
+      ind = industries[rand_ind]
       c = ind[int(r * len(ind))]
       amount = p.spending_rate * p.money / days_per_month
       p.money -= amount
@@ -231,7 +231,7 @@ def run(
   ):
 
   # Set up simulation
-  industry_names = periods[0]['industries'][0]
+  industry_names = periods[0]['spending_distribution'][0]
   people, companies = init(
     ncompanies=ncompanies,
     company_size=company_size,
@@ -244,7 +244,7 @@ def run(
   unemployment_benefit = None
   rehire_rate = None
   spending_inclination = None
-  industries = None
+  spending_distribution = None
 
   # Run simluation
   for i in range(len(periods)):
@@ -254,7 +254,7 @@ def run(
     unemployment_benefit = unemployment_benefit if 'unemployment_benefit' not in periods[i] else periods[i]['unemployment_benefit']
     rehire_rate = rehire_rate if 'rehire_rate' not in periods[i] else periods[i]['rehire_rate']
     spending_inclination = spending_inclination if 'spending_inclination' not in periods[i] else periods[i]['spending_inclination']
-    industries = industries if 'industries' not in periods[i] else periods[i]['industries']
+    spending_distribution = spending_distribution if 'spending_distribution' not in periods[i] else periods[i]['spending_distribution']
 
     # Grant stimulus/unemployment benefits for this period
     people, companies = grant_stimulus(people, companies, person_stimulus, company_stimulus)
@@ -263,11 +263,11 @@ def run(
     for j in range(periods[i]['duration']):
       on_day(i, j, people, companies)
 
-      ind_companies = {
+      industries = {
         ind: [c for c in companies if c.in_business and c.industry == ind]
-        for ind in industries[0]
+        for ind in spending_distribution[0]
       }
-      people, companies = spend(people, companies, industries, ind_companies)
+      people, companies = spend(people, companies, spending_distribution, industries)
 
       # At the end of the month, companies hire new employees and pay their
       # employees

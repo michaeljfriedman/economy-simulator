@@ -191,10 +191,10 @@ def test_people_spending2():
     simulator.Company(money=c_money, industry=ind2)
   ]
   people, companies = simulator.spend(
-    people,
-    companies,
-    [[ind1, ind2], [p, 1-p]],
-    {ind1: [companies[0]], ind2: [companies[1]]}
+    people=people,
+    companies=companies,
+    spending_distribution=[[ind1, ind2], [p, 1-p]],
+    industries={ind1: [companies[0]], ind2: [companies[1]]}
   )
 
   # Check that people's money is correct

@@ -405,7 +405,7 @@ $(document).ready(() => {
       this.unemployment_benefit = new Var("unemployment_benefit", new NumberInput("float", "Unemployment benefit", 0))
       this.rehire_rate = new Var("rehire_rate", new NumberInput("float", "Rehire rate", 0));
       this.spending_inclination = new Var("spending_inclination", new PercentageInput("Inclination to spend", 0));
-      this.industries = new Var("industries", new DistributionInputs("string", "Industry distribution"));
+      this.spending_distribution = new Var("spending_distribution", new DistributionInputs("string", "Spending distribution across industries"));
 
       this.element = withPadding(
         element("div").addClass("card")
@@ -417,7 +417,7 @@ $(document).ready(() => {
           .append(this.unemployment_benefit.input.element)
           .append(this.rehire_rate.input.element)
           .append(this.spending_inclination.input.element)
-          .append(this.industries.input.element)
+          .append(this.spending_distribution.input.element)
         )
       );
     }
@@ -514,9 +514,9 @@ $(document).ready(() => {
           unemployment_benefit: p.unemployment_benefit.input.value,
           rehire_rate: p.rehire_rate.input.value,
           spending_inclination: p.spending_inclination.input.value,
-          industries: [
-            p.industries.input.values,
-            p.industries.input.probabilities
+          spending_distribution: [
+            p.spending_distribution.input.values,
+            p.spending_distribution.input.probabilities
           ]
         });
       }
@@ -548,7 +548,7 @@ $(document).ready(() => {
         success &= this.periods[i].unemployment_benefit.set(json.periods[i].unemployment_benefit);
         success &= this.periods[i].rehire_rate.set(json.periods[i].rehire_rate);
         success &= this.periods[i].spending_inclination.set(json.periods[i].spending_inclination);
-        success &= this.periods[i].industries.set(json.periods[i].industries);
+        success &= this.periods[i].spending_distribution.set(json.periods[i].spending_distribution);
       }
 
       if (!success) {
@@ -736,7 +736,7 @@ $(document).ready(() => {
 
           // Make per-industry charts
           charts.industries = {};
-          let industries = config.periods[0].industries.input.values;
+          let industries = config.periods[0].spending_distribution.input.values;
           industries.forEach((i) => {
             charts.industries[i] = new ChartGroup(i, [person_money, company_money, person_unemployment, company_closures]);
           });

@@ -98,7 +98,7 @@ Periods:
   - `unemployment_benefit` (float)
   - `rehire_rate` (float)
   - `spending_inclination` (float)
-  - `industries` (distribution)
+  - `spending_distribution` (distribution)
 
 Example:
 
@@ -121,7 +121,7 @@ Example:
       "unemployment_benefit": 0,
       "rehire_rate": 1.0,
       "spending_inclination": 0.5,
-      "industries": [
+      "spending_distribution": [
         ["industry 1", "industry 2"],
         [0.5, 0.5]
       ]
