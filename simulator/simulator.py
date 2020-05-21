@@ -21,6 +21,7 @@ defaults = {
       'duration': 360,
       'person_stimulus': 1,
       'company_stimulus': 1,
+      'unemployment_benefit': 0,
       'rehire_rate': 1,
       'spending_inclination': 0.5,
       'industries': [
@@ -109,6 +110,13 @@ def grant_stimulus(people, companies, person_stimulus, company_stimulus):
     c.money += company_stimulus * payroll
 
   return people, companies
+
+# Grant the unemployment benefit to people. Returns the new list of people
+def grant_unemployment(people, unemployment_benefit):
+  for p in people:
+    if not p.employed:
+      p.money += unemployment_benefit * p.income
+  return people
 
 # Given the list of people, companies, and industries each person picks a random
 # company within an industry chosen from the industry distribution, and spends a
@@ -233,6 +241,7 @@ def run(
   )
   person_stimulus = None
   company_stimulus = None
+  unemployment_benefit = None
   rehire_rate = None
   spending_inclination = None
   industries = None
@@ -242,12 +251,14 @@ def run(
     # Set parameters for this period
     person_stimulus = person_stimulus if 'person_stimulus' not in periods[i] else periods[i]['person_stimulus']
     company_stimulus = company_stimulus if 'company_stimulus' not in periods[i] else periods[i]['company_stimulus']
+    unemployment_benefit = unemployment_benefit if 'unemployment_benefit' not in periods[i] else periods[i]['unemployment_benefit']
     rehire_rate = rehire_rate if 'rehire_rate' not in periods[i] else periods[i]['rehire_rate']
     spending_inclination = spending_inclination if 'spending_inclination' not in periods[i] else periods[i]['spending_inclination']
     industries = industries if 'industries' not in periods[i] else periods[i]['industries']
 
-    # Grant stimulus for this period
+    # Grant stimulus/unemployment benefits for this period
     people, companies = grant_stimulus(people, companies, person_stimulus, person_stimulus)
+    people = grant_unemployment(people, unemployment_benefit)
 
     # Run the period
     for j in range(periods[i]['duration']):
