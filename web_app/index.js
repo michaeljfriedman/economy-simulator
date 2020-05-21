@@ -127,7 +127,7 @@ $(document).ready(() => {
 
   // An input for one (value, probability) pair in a distribution, given
   // its name
-  class DistributionInput {
+  class DistributionInputPair {
     // type is one of {"integer", "float", "string", "range"}
     constructor(type, defaultValue, defaultProbability) {
       this.value = JSON.parse(JSON.stringify(defaultValue)); // copy defaultValue
@@ -273,25 +273,25 @@ $(document).ready(() => {
   }
 
   // A container for all the inputs in a distribution
-  class DistributionInputs {
-    // type is one of the values accepted by DistributionInput
+  class DistributionInput {
+    // type is one of the values accepted by DistributionInputPair
     constructor(type, displayName) {
       this.type = type;
       this.values = [];
       this.probabilities = [];
-      this.inputs = []; // array of DistributionInput
+      this.inputs = []; // array of DistributionInputPairs
 
       // Create the element
       let label = element("h4").addClass("card-title")
         .text(displayName);
 
       let buttons = new AddRemoveButtons(
-        // The "add" button adds a new DistributionInput
+        // The "add" button adds a new DistributionInputPair
         () => {
           this.add();
         },
 
-        // The "remove" button removes the last DistributionInput
+        // The "remove" button removes the last DistributionInputPair
         () => {
           this.remove();
         }
@@ -323,7 +323,7 @@ $(document).ready(() => {
       let defaultProbability = 0;
 
       let nextIndex = this.inputs.length;
-      let input = new DistributionInput(this.type, defaultValue, defaultProbability);
+      let input = new DistributionInputPair(this.type, defaultValue, defaultProbability);
       input.onInput(() => {
         this.values[nextIndex] = input.value;
         this.probabilities[nextIndex] = input.probability;
@@ -405,7 +405,7 @@ $(document).ready(() => {
       this.unemployment_benefit = new Var("unemployment_benefit", new NumberInput("float", "Unemployment benefit", 0))
       this.rehire_rate = new Var("rehire_rate", new NumberInput("float", "Rehire rate", 0));
       this.spending_inclination = new Var("spending_inclination", new PercentageInput("Inclination to spend", 0));
-      this.spending_distribution = new Var("spending_distribution", new DistributionInputs("string", "Spending distribution across industries"));
+      this.spending_distribution = new Var("spending_distribution", new DistributionInput("string", "Spending distribution across industries"));
 
       this.element = withPadding(
         element("div").addClass("card")
@@ -427,8 +427,8 @@ $(document).ready(() => {
   class Config {
     constructor() {
       this.ncompanies = new Var("ncompanies", new NumberInput("integer", "Number of companies", 0));
-      this.income = new Var("income", new DistributionInputs("integer", "Income levels"));
-      this.company_size = new Var("company_size", new DistributionInputs("integer", "Company size"));
+      this.income = new Var("income", new DistributionInput("integer", "Income levels"));
+      this.company_size = new Var("company_size", new DistributionInput("integer", "Company size"));
       this.periods = [];
 
       let periodButtons = new AddRemoveButtons(
