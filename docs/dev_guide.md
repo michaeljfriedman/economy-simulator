@@ -96,16 +96,7 @@ Periods:
   - `person_stimulus` (float)
   - `company_stimulus` (float)
   - `rehire_rate` (float)
-  - `spending` (distribution). As another example, a uniform distribution over
-    [0, 1] would be represented as:
-
-    ```json
-    [
-      [[0, 1]],
-      [1]
-    ]
-    ```
-
+  - `spending_inclination` (float)
   - `industries` (distribution)
 
 Example:
@@ -127,10 +118,7 @@ Example:
       "person_stimulus": 1.0,
       "company_stimulus": 1.0,
       "rehire_rate": 1.0,
-      "spending": [
-        [[0, 0.5], [0.5, 1]],
-        [0.25, 0.75]
-      ],
+      "spending_inclination": 0.5,
       "industries": [
         ["industry 1", "industry 2"],
         [0.5, 0.5]

@@ -22,10 +22,7 @@ defaults = {
       'person_stimulus': 1,
       'company_stimulus': 1,
       'rehire_rate': 1,
-      'spending': [
-        [[0, 1]],
-        [1]
-      ],
+      'spending_inclination': 0.5,
       'industries': [
         ['whole_economy'],
         [1]
@@ -61,14 +58,19 @@ class Company:
     return ('Company(money=%.2f, in_business=%s, industry="%s", employees=%s)'
       % (self.money, str(self.in_business), self.industry, str([str(e) for e in self.employees])))
 
-# Picks a new spending rate for each person from the spending distribution.
-# Returns the new list of people.
-def reset_spending_rates(people, spending_dist):
-  range_idx = np.random.choice(range(len(spending_dist[0])), p=spending_dist[1], size=len(people))
+# Picks a new spending rate for each person given the spending inclination.
+# This function derives the uniform distribution to draw rates from, as
+# described in the README. Returns the new list of people.
+def reset_spending_rates(people, spending_inclination):
+  lo = 0
+  hi = 1
+  diff = spending_inclination - 0.5
+  if diff > 0:
+    lo += 2 * diff
+  else:
+    hi += 2 * diff # remember diff is negative
   rands = np.random.rand(len(people)) # random numbers used to pick a spending rate for each person
   for i in range(len(people)):
-    r = range_idx[i]
-    lo, hi = spending_dist[0][r]
     people[i].spending_rate = lo + rands[i] * (hi - lo)
   return people
 
@@ -77,7 +79,7 @@ def init(
   ncompanies=defaults['ncompanies'],
   income=defaults['income'],
   company_size=defaults['company_size'],
-  spending=defaults['periods'][0]['spending'],
+  spending_inclination=defaults['periods'][0]['spending_inclination'],
   industry_names=defaults['periods'][0]['industries'][0]
   ):
 
@@ -93,7 +95,7 @@ def init(
   incomes = np.random.choice(income[0], p=income[1], size=len(people))
   for i in range(len(people)):
     people[i].income = incomes[i] / months_per_year
-  people = reset_spending_rates(people, spending)
+  people = reset_spending_rates(people, spending_inclination)
   return people, companies
 
 # Grant stimulus for people and companies. Returns the new list of people and
@@ -226,13 +228,13 @@ def run(
     ncompanies=ncompanies,
     company_size=company_size,
     income=income,
-    spending=periods[0]['spending'],
+    spending_inclination=periods[0]['spending_inclination'],
     industry_names=industry_names
   )
   person_stimulus = None
   company_stimulus = None
   rehire_rate = None
-  spending = None
+  spending_inclination = None
   industries = None
 
   # Run simluation
@@ -241,7 +243,7 @@ def run(
     person_stimulus = person_stimulus if 'person_stimulus' not in periods[i] else periods[i]['person_stimulus']
     company_stimulus = company_stimulus if 'company_stimulus' not in periods[i] else periods[i]['company_stimulus']
     rehire_rate = rehire_rate if 'rehire_rate' not in periods[i] else periods[i]['rehire_rate']
-    spending = spending if 'spending' not in periods[i] else periods[i]['spending']
+    spending_inclination = spending_inclination if 'spending_inclination' not in periods[i] else periods[i]['spending_inclination']
     industries = industries if 'industries' not in periods[i] else periods[i]['industries']
 
     # Grant stimulus for this period
@@ -263,6 +265,6 @@ def run(
         people, companies = pay_employees(people, companies)
 
         # Reset people's spending rates
-        people = reset_spending_rates(people, spending)
+        people = reset_spending_rates(people, spending_inclination)
 
       on_eod(i, j, people, companies)
