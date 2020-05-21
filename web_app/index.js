@@ -400,11 +400,11 @@ $(document).ready(() => {
     // index = index of this period (for display)
     constructor(index) {
       this.duration = new Var("duration", new NumberInput("integer", "Number of days", 0));
-      this.personStimulus = new Var("person_stimulus", new NumberInput("float", "Person stimulus", 0));
-      this.companyStimulus = new Var("company_stimulus", new NumberInput("float", "Company stimulus", 0));
-      this.unemploymentBenefit = new Var("unemployment_benefit", new NumberInput("float", "Unemployment benefit", 0))
-      this.rehireRate = new Var("rehire_rate", new NumberInput("float", "Rehire rate", 0));
-      this.spendingInclination = new Var("spending_inclination", new PercentageInput("Inclination to spend", 0));
+      this.person_stimulus = new Var("person_stimulus", new NumberInput("float", "Person stimulus", 0));
+      this.company_stimulus = new Var("company_stimulus", new NumberInput("float", "Company stimulus", 0));
+      this.unemployment_benefit = new Var("unemployment_benefit", new NumberInput("float", "Unemployment benefit", 0))
+      this.rehire_rate = new Var("rehire_rate", new NumberInput("float", "Rehire rate", 0));
+      this.spending_inclination = new Var("spending_inclination", new PercentageInput("Inclination to spend", 0));
       this.industries = new Var("industries", new DistributionInputs("string", "Industry distribution"));
 
       this.element = withPadding(
@@ -412,11 +412,11 @@ $(document).ready(() => {
         .append(element("div").addClass("card-body")
           .append(element("h3").addClass("card-title").text("Period " + index))
           .append(this.duration.input.element)
-          .append(this.personStimulus.input.element)
-          .append(this.companyStimulus.input.element)
-          .append(this.unemploymentBenefit.input.element)
-          .append(this.rehireRate.input.element)
-          .append(this.spendingInclination.input.element)
+          .append(this.person_stimulus.input.element)
+          .append(this.company_stimulus.input.element)
+          .append(this.unemployment_benefit.input.element)
+          .append(this.rehire_rate.input.element)
+          .append(this.spending_inclination.input.element)
           .append(this.industries.input.element)
         )
       );
@@ -428,7 +428,7 @@ $(document).ready(() => {
     constructor() {
       this.ncompanies = new Var("ncompanies", new NumberInput("integer", "Number of companies", 0));
       this.income = new Var("income", new DistributionInputs("integer", "Income levels"));
-      this.companySize = new Var("company_size", new DistributionInputs("integer", "Company size"));
+      this.company_size = new Var("company_size", new DistributionInputs("integer", "Company size"));
       this.periods = [];
 
       let periodButtons = new AddRemoveButtons(
@@ -464,7 +464,7 @@ $(document).ready(() => {
               ).append(element("div").addClass("col-md-4")
                 .append(this.income.input.element)
               ).append(element("div").addClass("col-md-4")
-                .append(this.companySize.input.element)
+                .append(this.company_size.input.element)
               )
             )
           )
@@ -499,8 +499,8 @@ $(document).ready(() => {
           this.income.input.probabilities
         ],
         company_size: [
-          this.companySize.input.values,
-          this.companySize.input.probabilities
+          this.company_size.input.values,
+          this.company_size.input.probabilities
         ],
         periods: []
       };
@@ -509,11 +509,11 @@ $(document).ready(() => {
         let p = this.periods[i];
         json.periods.push({
           duration: p.duration.input.value,
-          person_stimulus: p.personStimulus.input.value,
-          company_stimulus: p.companyStimulus.input.value,
-          unemployment_benefit: p.unemploymentBenefit.input.value,
-          rehire_rate: p.rehireRate.input.value,
-          spending_inclination: p.spendingInclination.input.value,
+          person_stimulus: p.person_stimulus.input.value,
+          company_stimulus: p.company_stimulus.input.value,
+          unemployment_benefit: p.unemployment_benefit.input.value,
+          rehire_rate: p.rehire_rate.input.value,
+          spending_inclination: p.spending_inclination.input.value,
           industries: [
             p.industries.input.values,
             p.industries.input.probabilities
@@ -529,7 +529,7 @@ $(document).ready(() => {
       let success = true;
       success &= this.ncompanies.set(json.ncompanies);
       success &= this.income.set(json.income);
-      success &= this.companySize.set(json.company_size);
+      success &= this.company_size.set(json.company_size);
 
       // Add/remove periods if necessary to match the given set
       let diff = Math.abs(json.periods.length - this.periods.length);
@@ -543,11 +543,11 @@ $(document).ready(() => {
 
       for (let i = 0; i < this.periods.length; i++) {
         success &= this.periods[i].duration.set(json.periods[i].duration);
-        success &= this.periods[i].personStimulus.set(json.periods[i].person_stimulus);
-        success &= this.periods[i].companyStimulus.set(json.periods[i].company_stimulus);
-        success &= this.periods[i].unemploymentBenefit.set(json.periods[i].unemployment_benefit);
-        success &= this.periods[i].rehireRate.set(json.periods[i].rehire_rate);
-        success &= this.periods[i].spendingInclination.set(json.periods[i].spending_inclination);
+        success &= this.periods[i].person_stimulus.set(json.periods[i].person_stimulus);
+        success &= this.periods[i].company_stimulus.set(json.periods[i].company_stimulus);
+        success &= this.periods[i].unemployment_benefit.set(json.periods[i].unemployment_benefit);
+        success &= this.periods[i].rehire_rate.set(json.periods[i].rehire_rate);
+        success &= this.periods[i].spending_inclination.set(json.periods[i].spending_inclination);
         success &= this.periods[i].industries.set(json.periods[i].industries);
       }
 
