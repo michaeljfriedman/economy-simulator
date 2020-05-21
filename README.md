@@ -5,6 +5,12 @@ see what happens to the distribution of wealth across people and companies, the
 the unemployment rate, and the business closure rate, when you vary certain
 parameters.
 
+> Note that this is merely an experimental model of a toy economy. I do not
+claim that this is an accurate model of reality, and any results derived from
+this model should not be used to conclude what would actually happen in reality.
+I only use it to understand the potential effects of certain parameters on a
+simplified model.
+
 This README covers how the simulation is designed and how to run it. For
 development details, see the [developer guide](docs/dev_guide.md).
 
@@ -103,15 +109,11 @@ value is used.
   monthly payroll.
 - **Rehire rate**: the probability that an unemployed person is rehired when an
   opening comes up.
-- **Spending distribution**: the distribution of people's spending rates. Each
-  month, every person picks a spending rate (a fraction of their money) from
-  this distribution, and spends that much in that month. Each value should be
-  a pair of numbers representing a *range* of rates people can choose from
-  (e.g. 0 to 1 would be the full range of their money). People pick a range
-  according to the distribution, and then choose a value uniformly within that
-  range. So for example, if you had two ranges [0, 0.5] with 25% probability,
-  and [0.5, 1] with 75% probability, this would be a "skewed" distribution that
-  gives people a tendency to spend more.
+- **Inclination to spend**: the average percentage of their money that each
+  person will spend each month. For example, setting this to 50% means that
+  people will, on average, spend 50% of their money each month. The actual
+  percentage that each person spends is different each month, drawn uniformly
+  from the largest range between 0 and 1 whose center is at this number.
 - **Industry distribution**: the distribution of how likely a person is to spend
   money in a particular industry. So for example, if you had 5 industries, 4
   that each have 25% probability, and 1 with 0%, this would simulate the effect
