@@ -402,6 +402,7 @@ $(document).ready(() => {
       this.duration = new Var("duration", new NumberInput("integer", "Number of days", 0));
       this.personStimulus = new Var("person_stimulus", new NumberInput("float", "Person stimulus", 0));
       this.companyStimulus = new Var("company_stimulus", new NumberInput("float", "Company stimulus", 0));
+      this.unemploymentBenefit = new Var("unemployment_benefit", new NumberInput("float", "Unemployment benefit", 0))
       this.rehireRate = new Var("rehire_rate", new NumberInput("float", "Rehire rate", 0));
       this.spendingInclination = new Var("spending_inclination", new PercentageInput("Inclination to spend", 0));
       this.industries = new Var("industries", new DistributionInputs("string", "Industry distribution"));
@@ -413,6 +414,7 @@ $(document).ready(() => {
           .append(this.duration.input.element)
           .append(this.personStimulus.input.element)
           .append(this.companyStimulus.input.element)
+          .append(this.unemploymentBenefit.input.element)
           .append(this.rehireRate.input.element)
           .append(this.spendingInclination.input.element)
           .append(this.industries.input.element)
@@ -509,6 +511,7 @@ $(document).ready(() => {
           duration: p.duration.input.value,
           person_stimulus: p.personStimulus.input.value,
           company_stimulus: p.companyStimulus.input.value,
+          unemployment_benefit: p.unemploymentBenefit.input.value,
           rehire_rate: p.rehireRate.input.value,
           spending_inclination: p.spendingInclination.input.value,
           industries: [
@@ -542,6 +545,7 @@ $(document).ready(() => {
         success &= this.periods[i].duration.set(json.periods[i].duration);
         success &= this.periods[i].personStimulus.set(json.periods[i].person_stimulus);
         success &= this.periods[i].companyStimulus.set(json.periods[i].company_stimulus);
+        success &= this.periods[i].unemploymentBenefit.set(json.periods[i].unemployment_benefit);
         success &= this.periods[i].rehireRate.set(json.periods[i].rehire_rate);
         success &= this.periods[i].spendingInclination.set(json.periods[i].spending_inclination);
         success &= this.periods[i].industries.set(json.periods[i].industries);

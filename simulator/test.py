@@ -123,6 +123,35 @@ def test_stimulus():
         return
   print('Passed')
 
+def test_unemployment_benefit():
+  print('Check that unemployment benefit is granted correctly')
+  n_employed = 8
+  n_unemployed = 2
+  income = 1
+  init_money = 10
+  unemployment_benefit = 0.8
+  people = (
+    [simulator.Person(money=init_money, income=income) for i in range(n_employed)]
+    + [simulator.Person(money=init_money, income=income, employed=False) for i in range(n_unemployed)]
+  )
+  people = simulator.grant_unemployment(people, unemployment_benefit)
+
+  # Check that money is correct
+  for p in people:
+    money_with_benefit = init_money + unemployment_benefit * income
+    if p.employed and p.money != init_money:
+      print('Falied: Employed person has wrong amount of money')
+      print('Expected: money=%.2f' % init_money)
+      print('Actual:   money=%.2f' % p.money)
+      return
+    elif not p.employed and p.money != money_with_benefit:
+      print('Failed: Unemployed person has wrong amount of money')
+      print('Expected: money=%.2f' % money_with_benefit)
+      print('Actual:   money=%.2f' % p.money)
+      return
+  print('Passed')
+
+
 def test_people_spending1():
   print('Check that people spend a valid amount to companies (1 person, 2 companies)')
   p_money = 100
@@ -395,6 +424,7 @@ def main():
   test_init_spending_inclination(0.9)
   test_init_industries()
   test_stimulus()
+  test_unemployment_benefit()
   test_people_spending1()
   test_people_spending2()
   test_people_spending_when_out_of_business()
