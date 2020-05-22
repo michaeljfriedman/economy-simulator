@@ -116,7 +116,7 @@ Example:
     [0.5, 0.5]
   ],
   "nonpayroll": 0.75,
-  "network_size": 10,
+  "network_size": 20,
   "periods": [
     {
       "duartion": 360,

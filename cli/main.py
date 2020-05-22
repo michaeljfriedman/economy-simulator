@@ -61,13 +61,7 @@ def main(argv):
       company_closures[i].append(not c.in_business)
     t.update()
 
-  simulator.run(
-    ncompanies=config['ncompanies'],
-    income=config['income'],
-    company_size=config['company_size'],
-    periods=config['periods'],
-    on_day=on_day
-  )
+  simulator.run(config, on_day=on_day)
   t.close()
 
   # Write results

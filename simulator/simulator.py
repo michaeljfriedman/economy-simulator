@@ -222,21 +222,14 @@ def pay_employees(people, companies):
 # NOTE: Be mindful - these args are passed by reference, so you can technically
 # change them and mess with the simulation. Please don't do that. Read only. I
 # would have passed a copy instead, but it slows down the simulation a lot.
-def run(
-  ncompanies=defaults['ncompanies'],
-  income=defaults['income'],
-  company_size=defaults['company_size'],
-  periods=defaults['periods'],
-  on_day=lambda period, day, people, companies: None
-  ):
-
+def run(config, on_day=lambda period, day, people, companies: None):
   # Set up simulation
-  industry_names = periods[0]['spending_distribution'][0]
+  industry_names = config['periods'][0]['spending_distribution'][0]
   people, companies = init(
-    ncompanies=ncompanies,
-    company_size=company_size,
-    income=income,
-    spending_inclination=periods[0]['spending_inclination'],
+    ncompanies=config['ncompanies'],
+    company_size=config['company_size'],
+    income=config['income'],
+    spending_inclination=config['periods'][0]['spending_inclination'],
     industry_names=industry_names
   )
   person_stimulus = None
@@ -247,20 +240,20 @@ def run(
   spending_distribution = None
 
   # Run simluation
-  for i in range(len(periods)):
+  for i in range(len(config['periods'])):
     # Set parameters for this period
-    person_stimulus = person_stimulus if 'person_stimulus' not in periods[i] else periods[i]['person_stimulus']
-    company_stimulus = company_stimulus if 'company_stimulus' not in periods[i] else periods[i]['company_stimulus']
-    unemployment_benefit = unemployment_benefit if 'unemployment_benefit' not in periods[i] else periods[i]['unemployment_benefit']
-    rehire_rate = rehire_rate if 'rehire_rate' not in periods[i] else periods[i]['rehire_rate']
-    spending_inclination = spending_inclination if 'spending_inclination' not in periods[i] else periods[i]['spending_inclination']
-    spending_distribution = spending_distribution if 'spending_distribution' not in periods[i] else periods[i]['spending_distribution']
+    person_stimulus = person_stimulus if 'person_stimulus' not in config['periods'][i] else config['periods'][i]['person_stimulus']
+    company_stimulus = company_stimulus if 'company_stimulus' not in config['periods'][i] else config['periods'][i]['company_stimulus']
+    unemployment_benefit = unemployment_benefit if 'unemployment_benefit' not in config['periods'][i] else config['periods'][i]['unemployment_benefit']
+    rehire_rate = rehire_rate if 'rehire_rate' not in config['periods'][i] else config['periods'][i]['rehire_rate']
+    spending_inclination = spending_inclination if 'spending_inclination' not in config['periods'][i] else config['periods'][i]['spending_inclination']
+    spending_distribution = spending_distribution if 'spending_distribution' not in config['periods'][i] else config['periods'][i]['spending_distribution']
 
     # Grant stimulus/unemployment benefits for this period
     people, companies = grant_stimulus(people, companies, person_stimulus, company_stimulus)
 
     # Run the period
-    for j in range(periods[i]['duration']):
+    for j in range(config['periods'][i]['duration']):
       on_day(i, j, people, companies)
 
       industries = {
