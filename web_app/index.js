@@ -21,6 +21,8 @@ $(document).ready(() => {
       [10],
       [1]
     ],
+    nonpayroll: 0.75,
+    network_size: 20,
     periods: [{
       duration: 360,
       person_stimulus: 1,
@@ -420,6 +422,8 @@ $(document).ready(() => {
       this.ncompanies = new Var("ncompanies", new NumberInput("Number of companies", "integer"));
       this.income = new Var("income", new DistributionInput("Income levels", "integer"));
       this.company_size = new Var("company_size", new DistributionInput("Company size", "integer"));
+      this.nonpayroll = new Var("nonpayroll", new PercentageInput("Company non-payroll expenses"));
+      this.network_size = new Var("network_size", new NumberInput("Company network size", "integer"));
       this.periods = [];
 
       let periodButtons = new AddRemoveButtons(
@@ -449,15 +453,21 @@ $(document).ready(() => {
         .append(withPadding(element("div").addClass("card").addClass("border-0")
           .append(element("div").addClass("card-body")
             .append(element("h2").addClass("card-title").text("Base Parameters"))
-            .append(element("div").addClass("row")
-              .append(element("div").addClass("col-md-4")
+            .append(withPadding(element("div").addClass("row")
+              .append(element("div").addClass("col-md-6")
                 .append(this.ncompanies.input.element)
-              ).append(element("div").addClass("col-md-4")
+              ).append(element("div").addClass("col-md-6")
                 .append(this.income.input.element)
-              ).append(element("div").addClass("col-md-4")
-                .append(this.company_size.input.element)
               )
-            )
+            )).append(withPadding(element("div").addClass("row")
+              .append(element("div").addClass("col-md-4")
+                .append(this.company_size.input.element)
+              ).append(element("div").addClass("col-md-4")
+                .append(this.nonpayroll.input.element)
+              ).append(element("div").addClass("col-md-4")
+                .append(this.network_size.input.element)
+              )
+            ))
           )
         ))
       ).append(this.periodsContainer);
@@ -494,6 +504,8 @@ $(document).ready(() => {
           this.company_size.input.values,
           this.company_size.input.probabilities
         ],
+        nonpayroll: this.nonpayroll.input.value,
+        network_size: this.network_size.input.value,
         periods: []
       };
 
@@ -522,6 +534,8 @@ $(document).ready(() => {
       success &= this.ncompanies.set(json.ncompanies);
       success &= this.income.set(json.income);
       success &= this.company_size.set(json.company_size);
+      success &= this.nonpayroll.set(json.nonpayroll);
+      success &= this.network_size.set(json.network_size);
 
       // Add/remove periods if necessary to match the given set
       let diff = Math.abs(json.periods.length - this.periods.length);
