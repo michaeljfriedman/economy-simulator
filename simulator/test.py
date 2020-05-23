@@ -275,6 +275,74 @@ def test_pay_employees():
       return
   print('Passed')
 
+def test_pay_employees_with_layoffs():
+  print("Check that companies lay off employees they can't afford to pay (4 people, 1 company)")
+  npeople = 4
+  nunemployed = 2
+  p_money = 1
+  p_income = 1
+  c_money = (npeople - nunemployed) * p_income # enough to pay all but 2 employees
+  people = [simulator.Person(money=p_money, income=p_income) for i in range(npeople)]
+  c = simulator.Company(money=c_money, employees=[p for p in people])
+  people, companies = simulator.pay_employees(people, [c])
+
+  if len(people) != npeople:
+    print('Failed: people disappeared')
+    print('Expected: len(people)=%d' % npeople)
+    print('Actual:   len(people)=%d' % len(people))
+    return
+
+  # Check that the right number of people are marked employed vs unemployed
+  unemployed = [i for i in range(len(people)) if not people[i].employed]
+  employed = [i for i in range(len(people)) if people[i].employed]
+  if len(unemployed) != nunemployed:
+    print('Failed: wrong number of people are marked unemployed')
+    print('Expected: %d' % nunemployed)
+    print('Actual:   %d' % len(unemployed))
+    return
+  if len(employed) != npeople - nunemployed:
+    print('Failed: wrong number of people are marked employed')
+    print('Expected %d' % (npeople - nunemployed))
+    print('Actual:  %d' % len(employed))
+    return
+
+  # Check that employed people got paid, and unemployed people were not
+  groups = [
+    (employed, p_money + p_income),
+    (unemployed, p_money)
+  ]
+  for group, expected_money in groups:
+    for i in group:
+      p = people[i]
+      if p.money != expected_money:
+        print('Failed: person %s has wrong amount of money' % str(p))
+        print('Expected: %.2f' % expected_money)
+        print('Actual:   %.2f' % p.money)
+        return
+
+  # Check that company has the right amount of money
+  c = companies[0]
+  expected = c_money - (npeople / 2) * (p_income)
+  if c.money != expected:
+    print('Failed: company %s has wrong amount of money' % str(c))
+    print('Expected: %.2f' % expected)
+    print('Actual:   %.2f' % c.money)
+    return
+
+  # Check that laid off people were removed from company's employee list
+  employee_indices = []
+  for e in c.employees:
+    for i in range(len(people)):
+      if e == people[i]:
+        employee_indices.append(i)
+  if sorted(employee_indices) != sorted(employed):
+    print('Failed: company has the wrong people listed as employees')
+    print('Expected: people indices %s' % sorted(employed))
+    print('Actual:   people indices %s' % sorted(employee_indices))
+    return
+
+  print('Passed')
+
 def test_unemployed_people_are_not_paid():
   print('Check that unemployed people do not get paid (1 employed person, 1 unemployed person, 1 company)')
   npeople = 2
@@ -429,6 +497,7 @@ def main():
   test_people_spending2()
   test_people_spending_when_out_of_business()
   test_pay_employees()
+  test_pay_employees_with_layoffs()
   test_unemployed_people_are_not_paid()
   test_layoff()
   test_company_goes_out_of_business()
