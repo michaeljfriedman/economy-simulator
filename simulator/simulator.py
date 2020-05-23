@@ -102,13 +102,14 @@ def init(
 
 # Grant stimulus for people and companies. Returns the new list of people and
 # companies.
-def grant_stimulus(people, companies, person_stimulus, company_stimulus):
+def grant_stimulus(people, companies, person_stimulus, company_stimulus, nonpayroll_frac):
   for p in people:
     p.money += person_stimulus * p.income
 
   for c in companies:
     payroll = np.sum([e.income for e in c.employees])
-    c.money += company_stimulus * payroll
+    total_expenses = payroll / (1 - nonpayroll_frac)
+    c.money += company_stimulus * total_expenses
 
   return people, companies
 
