@@ -101,19 +101,19 @@ def test_stimulus():
   n = 1000
   income = 1
   init_money = 10
+  nonpayroll = 0.75
   person_stimulus = 0.8
   company_stimulus = 0.9
   people = [simulator.Person(money=init_money, income=income) for i in range(n)]
   companies = [simulator.Company(money=init_money, employees=[people[i]]) for i in range(n)]
-  people, companies = simulator.grant_stimulus(people, companies, person_stimulus, company_stimulus)
+  people, companies = simulator.grant_stimulus(people, companies, person_stimulus, company_stimulus, nonpayroll)
 
   # Check that money is correct
   groups = [
-    ('people', people, person_stimulus),
-    ('companies', companies, company_stimulus)
+    ('people', people, init_money + person_stimulus * income),
+    ('companies', companies, init_money + company_stimulus * (income/(1-nonpayroll)))
   ]
-  for group_name, group, stimulus in groups:
-    expected_money = init_money + stimulus * income
+  for group_name, group, expected_money in groups:
     nincorrect = len([x for x in group if x.money != expected_money])
     for x in group:
       if x.money != expected_money:
@@ -162,7 +162,7 @@ def test_people_spending1():
   c1 = simulator.Company(money=c_money, industry=ind)
   c2 = simulator.Company(money=c_money, industry=ind)
   companies = [c1, c2]
-  people, companies = simulator.spend([p], companies, [[ind], [1]], {ind: companies})
+  people, companies = simulator.people_spend([p], companies, [[ind], [1]], {ind: companies})
 
   spent = spending_rate * p_money / simulator.days_per_month
   p_money_exp = p_money - spent
@@ -190,7 +190,7 @@ def test_people_spending2():
     simulator.Company(money=c_money, industry=ind1),
     simulator.Company(money=c_money, industry=ind2)
   ]
-  people, companies = simulator.spend(
+  people, companies = simulator.people_spend(
     people=people,
     companies=companies,
     spending_distribution=[[ind1, ind2], [p, 1-p]],
@@ -232,7 +232,7 @@ def test_people_spending_when_out_of_business():
   ind = 'industry'
   p = simulator.Person(money=p_money)
   c = simulator.Company(money=c_money, in_business=False, industry=ind)
-  people, companies = simulator.spend(
+  people, companies = simulator.people_spend(
     [p],
     [c],
     [[ind], [1]],
@@ -313,30 +313,30 @@ def test_unemployed_people_are_not_paid():
 
 def test_layoff():
   print("Check that company lays off 2/4 employees when it can't afford them anymore (4 people, 1 company)")
+  c_money = 2
+  expense = 4 # can't afford expense
+  reduction = lambda p: 1 # each layoff reduces the expense by 1 dollar -> 2 employees should be laid off
   npeople = 4
-  p_income = 1
-  c_money = (npeople / 2) * p_income # only enough for 1/2
-  people = [simulator.Person(income=p_income) for i in range(npeople)]
-  companies = [simulator.Company(money=c_money, employees=[p for p in people])]
+  people = [simulator.Person() for i in range(npeople)]
+  c = simulator.Company(money=c_money, employees=[p for p in people])
 
-  people, companies = simulator.layoff_employees(people, companies)
+  people, c = simulator.layoff_employees(people, c, expense, reduction)
   unemployed = [i for i in range(len(people)) if not people[i].employed]
   employed = [i for i in range(len(people)) if people[i].employed]
-  c = companies[0]
 
-  if len(unemployed) != npeople / 2:
+  if len(unemployed) != 2:
     print('Failed: wrong number of people were laid off')
-    print('Expected: %d' % (npeople / 2))
+    print('Expected: 2')
     print('Actual:   %d' % len(unemployed))
     return
-  if len(employed) != npeople / 2:
+  if len(employed) != npeople - 2:
     print('Failed: wrong number of people are still employed')
-    print('Expected: %d' % (npeople / 2))
+    print('Expected: %d' % (npeople - 2))
     print('Actual:   %d' % len(employed))
     return
-  if len(c.employees) != npeople / 2:
+  if len(c.employees) != npeople - 2:
     print('Failed: company has the wrong number of employees')
-    print('Expected: %d' % (npeople / 2))
+    print('Expected: %d' % (npeople - 2))
     print('Actual:   %d' % len(c.employees))
     return
 
@@ -358,14 +358,14 @@ def test_layoff():
 
 def test_company_goes_out_of_business():
   print('Check that a company goes out of business when it lays off all of its employees (1 person, 1 company)')
-  p_income = 12
-  c_money = 0.5 * p_income / simulator.months_per_year # half the amount it needs
-  p = simulator.Person(income=p_income)
+  c_money = 1
+  expense = 2
+  reduction = lambda p: 1 # each layoff reduces expense by 1 -> lay off the only employee -> out of business
+  p = simulator.Person()
   c = simulator.Company(money=c_money, employees=[p])
-  people, companies = simulator.layoff_employees([p], [c])
+  people, c = simulator.layoff_employees([p], c, expense, reduction)
 
   p = people[0]
-  c = companies[0]
   if p.employed:
     print('Failed: person is still marked as employed')
     print('Expected: p.employed = False')
