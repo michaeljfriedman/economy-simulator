@@ -139,29 +139,32 @@ def people_spend(people, companies, spending_distribution, industries):
       c.money += amount
   return people, companies
 
+# Helper function fo companies_spend, which does the spending for one company
+def company_spend(people, c, c_other, nonpayroll_frac):
+  # Lay off employees if needed
+  payroll = sum([e.income for e in c.employees])
+  nonpayroll = lambda payroll: payroll * (nonpayroll_frac / (1 - nonpayroll_frac))
+  amount = nonpayroll(payroll) / days_per_month
+  people, c = layoff_employees(people, c, amount, lambda e: nonpayroll(e.income))
+  if c.in_business:
+    # Pay other company
+    c.money -= amount
+    c_other.money += amount
+  return people, c, c_other
+
 # Given the list of companies and what fraction of their expenses is nonpayroll,
 # each company picks a random company and pays a portion of their nonpayroll
 # expenses to that company. They lay off employees if needed to afford the
-# expense. Returns the new list of companies.
+# expense. Returns the new list of people and companies.
 def companies_spend(people, companies, nonpayroll_frac):
   rands = np.random.rand(len(companies)) # random numbers used to pick another company for each company
-  nonpayroll = lambda payroll: payroll * (nonpayroll_frac / (1 - nonpayroll_frac))
   for i in range(len(companies)):
     if not companies[i].in_business:
       continue
 
-    # Lay off employees if needed
-    payroll = sum([e.income for e in companies[i].employees])
-    amount = nonpayroll(payroll)
-    people, companies[i] = layoff_employees(people, companies[i], amount, lambda e: nonpayroll(e.income))
-    if not companies[i].in_business:
-      continue
-
-    # Pay random other company
     other_companies = list(range(i)) + list(range(i+1, len(companies)))
     r = int(rands[i] * (len(companies) - 1))
-    companies[i].money -= amount
-    companies[r].money += amount
+    people, companies[i], companies[r] = company_spend(people, companies[i], companies[r], nonpayroll_frac)
   return people, companies
 
 # Given the list of people and companies and the probability of rehiring,

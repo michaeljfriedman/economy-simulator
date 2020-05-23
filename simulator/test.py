@@ -246,6 +246,41 @@ def test_people_spending_when_out_of_business():
     return
   print('Passed')
 
+def test_company_spending():
+  print('Check that a company spends the right amount to another company')
+  c_money = 20
+  payroll = 5
+  npeople = 5
+  p_income = payroll / npeople
+  nonpayroll = 0.75 # 15 dollars
+  people = [simulator.Person(income=p_income) for i in range(npeople)]
+  c1 = simulator.Company(money=c_money, employees=[p for p in people])
+  c2 = simulator.Company(money=c_money)
+  people, c1, c2 = simulator.company_spend(people, c1, c2, nonpayroll)
+
+  # Check that c1 hasn't laid off anyone
+  if len(c1.employees) != npeople:
+    print('Failed: c1 has the wrong number of employees')
+    print('Expected: %d' % npeople)
+    print('Actual:   %d' % len(c1.employees))
+    return
+
+  # Check that each company has the right amount of money
+  nonpayroll_amt = payroll * (nonpayroll / (1 - nonpayroll)) / simulator.days_per_month
+  companies = [
+    (c1, c_money - nonpayroll_amt),
+    (c2, c_money + nonpayroll_amt)
+  ]
+  for i in range(len(companies)):
+    c, expected_money = companies[i]
+    if c.money != expected_money:
+      print('Failed: company %d has the wrong amount of money' % i)
+      print('Expected: %.2f' % expected_money)
+      print('Actual:   %.2f' % c.money)
+      return
+
+  print('Passed')
+
 def test_pay_employees():
   print('Check that companies paying employees is working (4 people, 2 companies)')
   npeople = 4
@@ -496,6 +531,7 @@ def main():
   test_people_spending1()
   test_people_spending2()
   test_people_spending_when_out_of_business()
+  test_company_spending()
   test_pay_employees()
   test_pay_employees_with_layoffs()
   test_unemployed_people_are_not_paid()
