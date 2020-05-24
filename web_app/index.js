@@ -21,6 +21,7 @@ $(document).ready(() => {
       [10],
       [1]
     ],
+    nonpayroll: 0.75,
     periods: [{
       duration: 360,
       person_stimulus: 1,
@@ -42,7 +43,7 @@ $(document).ready(() => {
 
   // Creates a padded conatiner div with the child inside
   let withPadding = function(child) {
-    return element("div").addClass("py-3").addClass("my-n3")
+    return element("div").addClass("p-3").addClass("m-n3")
       .append(child);
   };
 
@@ -74,13 +75,11 @@ $(document).ready(() => {
           this.value = input[0].valueAsNumber;
         })
       
-      this.element = withPadding(
-        element("div").addClass("card")
+      this.element = element("div").addClass("card")
         .append(element("div").addClass("card-body")
           .append(label)
           .append(input)
-        )
-      )
+        );
     }
 
     // Sets the value
@@ -118,14 +117,12 @@ $(document).ready(() => {
           inputLabel.text(this.probStr(e.currentTarget.value));
         });
 
-      this.element = withPadding(
-        element("div").addClass("card")
+      this.element = element("div").addClass("card")
         .append(element("div").addClass("card-body")
           .append(label)
           .append(input)
           .append(inputLabel)
-        )
-      );
+        );
     }
 
     // Returns the probability string, given the value out of 100
@@ -205,8 +202,7 @@ $(document).ready(() => {
           probLabel.text(this.probStr(e.currentTarget.value));
         });;
 
-      this.element = withPadding(
-        element("div").addClass("row")
+      this.element = element("div").addClass("row")
         .append(element("div").addClass("col")
           .append(value)
         ).append(element("div").addClass("col")
@@ -215,8 +211,7 @@ $(document).ready(() => {
           ).append(element("div").addClass("row")
             .append(probLabel)
           )
-        )
-      );
+        );
     }
 
     onInput(f) {
@@ -268,11 +263,9 @@ $(document).ready(() => {
         .text("Remove")
         .on("click", onClickRemove);
 
-      this.element = withPadding(
-        element("div")
+      this.element = element("div")
         .append(addButton)
-        .append(removeButton)
-      );
+        .append(removeButton);
     }
   }
 
@@ -301,13 +294,11 @@ $(document).ready(() => {
         }
       );
 
-      this.element = withPadding(
-        element("div").addClass("card")
+      this.element = element("div").addClass("card")
         .append(element("div").addClass("card-body")
           .append(label)
-          .append(buttons.element)
-        )
-      );
+          .append(withPadding(buttons.element))
+        );
 
       this.add();
     }
@@ -322,7 +313,7 @@ $(document).ready(() => {
       this.values.push(input.value);
       this.probabilities.push(input.probability);
       this.inputs.push(input);
-      $(this.element.find(".card-body")[0]).append(input.element);
+      $(this.element.find(".card-body")[0]).append(withPadding(input.element));
     }
 
     remove() {
@@ -332,7 +323,7 @@ $(document).ready(() => {
         this.values.pop();
         this.probabilities.pop();
         this.inputs.pop();
-        last.element.remove();
+        last.element.parent().remove();
       }
     }
 
@@ -386,6 +377,57 @@ $(document).ready(() => {
     }
   }
 
+  // Grid of Bootstrap cards
+  class CardGrid {
+    // title (object) = title text and header (h) level, e.g. {text: "Title", h: 2}
+    // hasBorder (boolean) = whether to have a border
+    // buttons (AddRemoveButtons) = optional add/remove buttons
+    // breakpoints (object) = how many cards to have per row at each breakpoint.
+    //   Each breakpoint is optional e.g. {md: 2, lg: 3}
+    constructor(title, hasBorder, buttons, breakpoints) {
+      // Set the border
+      let grid = element("div").addClass("card");
+      if (!hasBorder) {
+        grid.addClass("border-0");
+      }
+
+      // Set breakpoints
+      let row = element("div").addClass("row").addClass("row-cols-1");
+      Object.keys(breakpoints).forEach((x) => {
+        row.addClass(`row-cols-${x}-${breakpoints[x]}`);
+      });
+
+      // Add the title and buttons
+      let body = element("div").addClass("card-body")
+        .append(element(`h${title.h}`).addClass("card-title").text(title.text));
+      if (buttons != null) {
+        body.append(withPadding(buttons.element));
+      }
+      body.append(withPadding(row));
+
+      // Put the whole thing together
+      this.element = grid.append(body);
+      this.cards = [];
+    }
+
+    add(card) {
+      $(this.element.find(".row")[0])
+      .append(element("div").addClass("col").addClass("mb-4")
+        .append(card)
+      );
+
+      this.cards.push(card);
+    }
+
+    remove() {
+      if (this.cards.length != 0) {
+        let last = this.cards[this.cards.length - 1];
+        this.cards.pop();
+        last.parent().remove();
+      }
+    }
+  }
+
   // A container for the Vars of a single period
   class Period {
     // index = index of this period (for display)
@@ -398,19 +440,20 @@ $(document).ready(() => {
       this.spending_inclination = new Var("spending_inclination", new PercentageInput("Inclination to spend"));
       this.spending_distribution = new Var("spending_distribution", new DistributionInput("Spending distribution across industries", "string"));
 
-      this.element = withPadding(
-        element("div").addClass("card")
-        .append(element("div").addClass("card-body")
-          .append(element("h3").addClass("card-title").text("Period " + index))
-          .append(this.duration.input.element)
-          .append(this.person_stimulus.input.element)
-          .append(this.company_stimulus.input.element)
-          .append(this.unemployment_benefit.input.element)
-          .append(this.rehire_rate.input.element)
-          .append(this.spending_inclination.input.element)
-          .append(this.spending_distribution.input.element)
-        )
-      );
+      let cards = new CardGrid({text: `Period ${index}`, h: 3}, true, null, {md: 2, lg: 3});
+      [
+        this.duration,
+        this.person_stimulus,
+        this.company_stimulus,
+        this.unemployment_benefit,
+        this.rehire_rate,
+        this.spending_inclination,
+        this.spending_distribution
+      ].forEach((x) => {
+        cards.add(x.input.element);
+      });
+
+      this.element = cards.element;
     }
   }
 
@@ -420,6 +463,7 @@ $(document).ready(() => {
       this.ncompanies = new Var("ncompanies", new NumberInput("Number of companies", "integer"));
       this.income = new Var("income", new DistributionInput("Income levels", "integer"));
       this.company_size = new Var("company_size", new DistributionInput("Company size", "integer"));
+      this.nonpayroll = new Var("nonpayroll", new PercentageInput("Company non-payroll expenses"));
       this.periods = [];
 
       let periodButtons = new AddRemoveButtons(
@@ -434,33 +478,20 @@ $(document).ready(() => {
         }
       );
 
-      this.periodsContainer = (
-        withPadding(element("div").addClass("card").addClass("border-0")
-        .append(element("div").addClass("card-body")
-          .append(element("h2").addClass("card-title").text("Periods"))
-          .append(periodButtons.element)
-          .append(element("div").addClass("row"))
-          )
-        )
-      );
+      this.periodsCards = new CardGrid({text: "Periods", h: 2}, false, periodButtons, {});
+      let baseParamsCards = new CardGrid({text: "Base Parameters", h: 2}, false, null, {md: 2, lg: 3});
+      [
+        this.ncompanies,
+        this.income,
+        this.company_size,
+        this.nonpayroll
+      ].forEach((x) => {
+        baseParamsCards.add(x.input.element);
+      });
 
-      this.element = (
-        element("div")
-        .append(withPadding(element("div").addClass("card").addClass("border-0")
-          .append(element("div").addClass("card-body")
-            .append(element("h2").addClass("card-title").text("Base Parameters"))
-            .append(element("div").addClass("row")
-              .append(element("div").addClass("col-md-4")
-                .append(this.ncompanies.input.element)
-              ).append(element("div").addClass("col-md-4")
-                .append(this.income.input.element)
-              ).append(element("div").addClass("col-md-4")
-                .append(this.company_size.input.element)
-              )
-            )
-          )
-        ))
-      ).append(this.periodsContainer);
+      this.element = element("div")
+        .append(withPadding(baseParamsCards.element))
+        .append(withPadding(this.periodsCards.element));
 
       // Set default values
       this.fromJSON(defaultConfig);
@@ -469,17 +500,13 @@ $(document).ready(() => {
     addPeriod() {
       let p = new Period(this.periods.length + 1);
       this.periods.push(p);
-      $(this.periodsContainer.find(".row")[0]).append(
-        element("div").addClass("col")
-        .append(p.element)
-      );
+      this.periodsCards.add(p.element);
     }
 
     removePeriod() {
       if (this.periods.length != 0) {
-        let last = this.periods[this.periods.length - 1];
         this.periods.pop();
-        last.element.parent().remove();
+        this.periodsCards.remove();
       }
     }
 
@@ -494,6 +521,7 @@ $(document).ready(() => {
           this.company_size.input.values,
           this.company_size.input.probabilities
         ],
+        nonpayroll: this.nonpayroll.input.value,
         periods: []
       };
 
@@ -522,6 +550,7 @@ $(document).ready(() => {
       success &= this.ncompanies.set(json.ncompanies);
       success &= this.income.set(json.income);
       success &= this.company_size.set(json.company_size);
+      success &= this.nonpayroll.set(json.nonpayroll);
 
       // Add/remove periods if necessary to match the given set
       let diff = Math.abs(json.periods.length - this.periods.length);

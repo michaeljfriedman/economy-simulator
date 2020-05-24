@@ -88,6 +88,7 @@ Base parameters:
 - `ncompanies` (int)
 - `income` (distribution)
 - `company_size` (distribution)
+- `nonpayroll` (float)
 
 Periods:
 
@@ -113,13 +114,14 @@ Example:
     [10, 20],
     [0.5, 0.5]
   ],
+  "nonpayroll": 0.75,
   "periods": [
     {
       "duartion": 360,
       "person_stimulus": 1.0,
       "company_stimulus": 1.0,
-      "unemployment_benefit": 0,
-      "rehire_rate": 1.0,
+      "unemployment_benefit": 0.8,
+      "rehire_rate": 0.8,
       "spending_inclination": 0.5,
       "spending_distribution": [
         ["industry 1", "industry 2"],

@@ -106,11 +106,5 @@ def run_simulator(ws):
       pass
 
   # Run the simulator
-  simulator.run(
-    ncompanies=config['ncompanies'],
-    income=config['income'],
-    company_size=config['company_size'],
-    periods=config['periods'],
-    on_day=on_day
-  )
+  simulator.run(config, on_day=on_day)
   ws.close()

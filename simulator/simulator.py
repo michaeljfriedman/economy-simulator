@@ -16,6 +16,7 @@ defaults = {
     [10],
     [1]
   ],
+  'nonpayroll': 0.75,
   'periods': [
     {
       'duration': 360,
@@ -101,13 +102,14 @@ def init(
 
 # Grant stimulus for people and companies. Returns the new list of people and
 # companies.
-def grant_stimulus(people, companies, person_stimulus, company_stimulus):
+def grant_stimulus(people, companies, person_stimulus, company_stimulus, nonpayroll_frac):
   for p in people:
     p.money += person_stimulus * p.income
 
   for c in companies:
     payroll = np.sum([e.income for e in c.employees])
-    c.money += company_stimulus * payroll
+    total_expenses = payroll / (1 - nonpayroll_frac)
+    c.money += company_stimulus * total_expenses
 
   return people, companies
 
@@ -118,14 +120,15 @@ def grant_unemployment(people, unemployment_benefit):
       p.money += unemployment_benefit * p.income
   return people
 
-# Given the list of people, companies, and the spending distribution each person
-# picks a random company within an industry chosen from the distribution, and
-# spends a portion of their monthly spending at that company. Returns the new
-# list of people and companies.
+# Given the list of people, companies, and the spending distribution, each
+# person picks a random company within an industry chosen from the distribution,
+# and spends a portion of their monthly spending at that company. Returns the
+# new list of people and companies.
 # - industries: a dict {industry: [list of companies in business in that industry]}
-def spend(people, companies, spending_distribution, industries):
+def people_spend(people, companies, spending_distribution, industries):
   in_business = [c for c in companies if c.in_business]
   if len(in_business) != 0:
+    # People spend money
     rand_inds = np.random.choice(spending_distribution[0], p=spending_distribution[1], size=len(people))
     rands = np.random.rand(len(people)) # random numbers used to pick a company for each person
     for p, rand_ind, r in zip(people, rand_inds, rands):
@@ -134,6 +137,34 @@ def spend(people, companies, spending_distribution, industries):
       amount = p.spending_rate * p.money / days_per_month
       p.money -= amount
       c.money += amount
+  return people, companies
+
+# Helper function fo companies_spend, which does the spending for one company
+def company_spend(people, c, c_other, nonpayroll_frac):
+  # Lay off employees if needed
+  nonpayroll = lambda payroll: payroll * (nonpayroll_frac / (1 - nonpayroll_frac))
+  amount = nonpayroll(sum([e.income for e in c.employees])) / days_per_month
+  people, c = layoff_employees(people, c, amount, lambda e: nonpayroll(e.income) / days_per_month)
+  if c.in_business:
+    # Pay other company
+    amount = nonpayroll(sum([e.income for e in c.employees])) / days_per_month
+    c.money -= amount
+    c_other.money += amount
+  return people, c, c_other
+
+# Given the list of companies and what fraction of their expenses is nonpayroll,
+# each company picks a random company and pays a portion of their nonpayroll
+# expenses to that company. They lay off employees if needed to afford the
+# expense. Returns the new list of people and companies.
+def companies_spend(people, companies, nonpayroll_frac):
+  rands = np.random.rand(len(companies)) # random numbers used to pick another company for each company
+  for i in range(len(companies)):
+    if not companies[i].in_business:
+      continue
+
+    other_companies = list(range(i)) + list(range(i+1, len(companies)))
+    r = int(rands[i] * (len(companies) - 1))
+    people, companies[i], companies[r] = company_spend(people, companies[i], companies[r], nonpayroll_frac)
   return people, companies
 
 # Given the list of people and companies and the probability of rehiring,
@@ -170,40 +201,45 @@ def rehire_people(people, companies, rehire_rate):
 
   return people, companies
 
-# Given the list of people and companies, companies lay off employees until
-# they can afford to pay all of them. Returns the new list of people and
-# companies.
-def layoff_employees(people, companies):
-  for c in companies:
-    if not c.in_business:
-      continue
+# Given the list of people, a company, the expense amount they need to pay, and
+# a lambda that tells us how much that amount would be reduced by laying off an
+# employee: companies lay off employees until they can afford that amount.
+# Returns the new list of people and the new company.
+def layoff_employees(people, c, expense, reduction):
+  # Count number of people to lay off
+  layoffs = np.random.permutation(c.employees) # order in which to lay off employees
+  total_reduction = 0 # total amount saved from laying off employees
+  nlayoff = 0
+  while True:
+    if expense - total_reduction <= c.money:
+      break
+    total_reduction += reduction(layoffs[nlayoff])
+    nlayoff += 1
+    if nlayoff == len(c.employees):
+      c.in_business = False
+      break
 
-    # Count number of people to lay off
-    payroll = np.sum([e.income for e in c.employees])
-    layoffs = np.random.permutation(c.employees) # order in which to lay off employees
-    layoff_income = 0 # total income of laid off employees
-    nlayoff = 0
-    while True:
-      if payroll - layoff_income <= c.money:
-        break
-      layoff_income += layoffs[nlayoff].income
-      nlayoff += 1
-      if nlayoff == len(c.employees):
-        c.in_business = False
-        break
-
-    # Lay off those people
-    for i in range(nlayoff):
-      c.employees.remove(layoffs[i])
-      layoffs[i].employed = False
-  return people, companies
+  # Lay off those people
+  for i in range(nlayoff):
+    c.employees.remove(layoffs[i])
+    layoffs[i].employed = False
+  return people, c
 
 # Given the list of people and companies, each company pays their employees
-# one month's income. Returns the new list of people and companies.
+# one month's income, laying off employees if needed to afford the expense.
+# Returns the new list of people and companies.
 def pay_employees(people, companies):
   for c in companies:
     if not c.in_business:
       continue
+
+    # Lay off employees
+    payroll = sum([e.income for e in c.employees])
+    people, c = layoff_employees(people, c, payroll, lambda e: e.income)
+    if not c.in_business:
+      continue
+
+    # Pay employees
     for e in c.employees:
       amount = e.income
       c.money -= amount
@@ -222,23 +258,17 @@ def pay_employees(people, companies):
 # NOTE: Be mindful - these args are passed by reference, so you can technically
 # change them and mess with the simulation. Please don't do that. Read only. I
 # would have passed a copy instead, but it slows down the simulation a lot.
-def run(
-  ncompanies=defaults['ncompanies'],
-  income=defaults['income'],
-  company_size=defaults['company_size'],
-  periods=defaults['periods'],
-  on_day=lambda period, day, people, companies: None
-  ):
-
+def run(config, on_day=lambda period, day, people, companies: None):
   # Set up simulation
-  industry_names = periods[0]['spending_distribution'][0]
+  industry_names = config['periods'][0]['spending_distribution'][0]
   people, companies = init(
-    ncompanies=ncompanies,
-    company_size=company_size,
-    income=income,
-    spending_inclination=periods[0]['spending_inclination'],
+    ncompanies=config['ncompanies'],
+    income=config['income'],
+    company_size=config['company_size'],
+    spending_inclination=config['periods'][0]['spending_inclination'],
     industry_names=industry_names
   )
+  nonpayroll = config['nonpayroll']
   person_stimulus = None
   company_stimulus = None
   unemployment_benefit = None
@@ -247,33 +277,33 @@ def run(
   spending_distribution = None
 
   # Run simluation
-  for i in range(len(periods)):
+  for i in range(len(config['periods'])):
     # Set parameters for this period
-    person_stimulus = person_stimulus if 'person_stimulus' not in periods[i] else periods[i]['person_stimulus']
-    company_stimulus = company_stimulus if 'company_stimulus' not in periods[i] else periods[i]['company_stimulus']
-    unemployment_benefit = unemployment_benefit if 'unemployment_benefit' not in periods[i] else periods[i]['unemployment_benefit']
-    rehire_rate = rehire_rate if 'rehire_rate' not in periods[i] else periods[i]['rehire_rate']
-    spending_inclination = spending_inclination if 'spending_inclination' not in periods[i] else periods[i]['spending_inclination']
-    spending_distribution = spending_distribution if 'spending_distribution' not in periods[i] else periods[i]['spending_distribution']
+    person_stimulus = person_stimulus if 'person_stimulus' not in config['periods'][i] else config['periods'][i]['person_stimulus']
+    company_stimulus = company_stimulus if 'company_stimulus' not in config['periods'][i] else config['periods'][i]['company_stimulus']
+    unemployment_benefit = unemployment_benefit if 'unemployment_benefit' not in config['periods'][i] else config['periods'][i]['unemployment_benefit']
+    rehire_rate = rehire_rate if 'rehire_rate' not in config['periods'][i] else config['periods'][i]['rehire_rate']
+    spending_inclination = spending_inclination if 'spending_inclination' not in config['periods'][i] else config['periods'][i]['spending_inclination']
+    spending_distribution = spending_distribution if 'spending_distribution' not in config['periods'][i] else config['periods'][i]['spending_distribution']
 
     # Grant stimulus/unemployment benefits for this period
-    people, companies = grant_stimulus(people, companies, person_stimulus, company_stimulus)
+    people, companies = grant_stimulus(people, companies, person_stimulus, company_stimulus, nonpayroll)
 
     # Run the period
-    for j in range(periods[i]['duration']):
+    for j in range(config['periods'][i]['duration']):
       on_day(i, j, people, companies)
 
       industries = {
         ind: [c for c in companies if c.in_business and c.industry == ind]
         for ind in spending_distribution[0]
       }
-      people, companies = spend(people, companies, spending_distribution, industries)
+      people, companies = people_spend(people, companies, spending_distribution, industries)
+      people, companies = companies_spend(people, companies, nonpayroll)
 
       # At the end of the month, companies hire new employees and pay their
       # employees
       if j % days_per_month == days_per_month - 1:
         people, companies = rehire_people(people, companies, rehire_rate)
-        people, companies = layoff_employees(people, companies)
         people, companies = pay_employees(people, companies)
 
         # Grant unemployment benefits
