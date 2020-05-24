@@ -142,12 +142,12 @@ def people_spend(people, companies, spending_distribution, industries):
 # Helper function fo companies_spend, which does the spending for one company
 def company_spend(people, c, c_other, nonpayroll_frac):
   # Lay off employees if needed
-  payroll = sum([e.income for e in c.employees])
   nonpayroll = lambda payroll: payroll * (nonpayroll_frac / (1 - nonpayroll_frac))
-  amount = nonpayroll(payroll) / days_per_month
-  people, c = layoff_employees(people, c, amount, lambda e: nonpayroll(e.income))
+  amount = nonpayroll(sum([e.income for e in c.employees])) / days_per_month
+  people, c = layoff_employees(people, c, amount, lambda e: nonpayroll(e.income) / days_per_month)
   if c.in_business:
     # Pay other company
+    amount = nonpayroll(sum([e.income for e in c.employees])) / days_per_month
     c.money -= amount
     c_other.money += amount
   return people, c, c_other
