@@ -89,7 +89,6 @@ Base parameters:
 - `income` (distribution)
 - `company_size` (distribution)
 - `nonpayroll` (float)
-- `network_size` (float)
 
 Periods:
 
@@ -116,7 +115,6 @@ Example:
     [0.5, 0.5]
   ],
   "nonpayroll": 0.75,
-  "network_size": 20,
   "periods": [
     {
       "duartion": 360,

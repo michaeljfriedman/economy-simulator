@@ -56,9 +56,8 @@ We're primarily interested in two things:
 
 Initialization:
 
-- Each company is assigned an industry, a number of employees from a
-  distribution, and a "network" of other companies they'll pay their non-payroll
-  expenses to (chosen at random)
+- Each company is assigned an industry and a number of employees from a
+  distribution
 - Each person is assigned income and an initial spending rate for the first
   month, both from a distribution
 - Both people and companies get a specified number of months' worth of money
@@ -69,11 +68,10 @@ Each day:
 - Each person picks an industry to spend in from a distribution, and picks a
   random company within that industry. They spend 1/30 of their monthly
   spending to that company (this model has 30 days per month)
-- Each company pays 1/30 of their monthly non-payroll expenses to the other
-  companies in their network (dividing equally among them). If they don't have
-  enough money to cover the expenses, they pick a random person to lay off until
-  they do. If they run out of employees, they go out of business (removed from
-  the economy).
+- Each company picks another random company and pays 1/30 of their monthly
+  non-payroll expenses to that company. If they don't have enough money to cover
+  the expense, they pick a random person to lay off until they do. If they run
+  out of employees, they go out of business (removed from the economy).
 
 At the end of each month:
 
@@ -108,10 +106,6 @@ parameters, which apply for the entire simulation:
 - **Company non-payroll expenses**: the percentage of each company's monthly
   expenses contributed by non-payroll expenses. This allows you to specify how
   much additional expense companies have aside from paying their employees.
-- **Company network size**: the number of other companies each company pays
-  expenses to. Everyone in a company's network gets paid an equal fraction of
-  their nonpayroll expenses. This represents companies paying each other for
-  goods/services.
 
 Then you specify a number of *periods* - a limited duration for which certain
 parameters apply. The periods run in the order listed, and each has the
@@ -125,7 +119,7 @@ value is used.
   the amount of money people will start the simulation with (e.g. 1 month's
   income), and in later periods, this can simulate stimulus checks.
 - **Stimulus for companies**: analogous number for companies, as a fraction of
-  monthly payroll.
+  their monthly expenses.
 - **Unemployment benefit**: a stimulus that's granted each month, only to
   *unemployed* people. Also specified as a fraction of monthly income.
 - **Rehire rate**: the probability that an unemployed person is rehired when an
