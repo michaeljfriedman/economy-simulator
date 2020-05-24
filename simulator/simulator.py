@@ -287,7 +287,7 @@ def run(config, on_day=lambda period, day, people, companies: None):
     spending_distribution = spending_distribution if 'spending_distribution' not in config['periods'][i] else config['periods'][i]['spending_distribution']
 
     # Grant stimulus/unemployment benefits for this period
-    people, companies = grant_stimulus(people, companies, person_stimulus, company_stimulus)
+    people, companies = grant_stimulus(people, companies, person_stimulus, company_stimulus, nonpayroll)
 
     # Run the period
     for j in range(config['periods'][i]['duration']):
