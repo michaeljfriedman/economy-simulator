@@ -117,7 +117,7 @@ Example:
   "nonpayroll": 0.75,
   "periods": [
     {
-      "duartion": 360,
+      "duration": 360,
       "person_stimulus": 1.0,
       "company_stimulus": 1.0,
       "unemployment_benefit": 0.8,

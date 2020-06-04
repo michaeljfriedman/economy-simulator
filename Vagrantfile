@@ -51,8 +51,8 @@ Vagrant.configure("2") do |config|
   #
   config.vm.provider "virtualbox" do |vb|
     # Customize the amount of memory on the VM:
-    vb.memory = "4096"
-    vb.cpus = "4"
+    vb.memory = "512"
+    vb.cpus = "1"
   end
   #
   # View the documentation for the provider you are using for more
@@ -66,6 +66,7 @@ Vagrant.configure("2") do |config|
     apt-get install -y git python3-pip
 
     # Set up python 3
+    rm -f /usr/bin/python /usr/bin/pip
     ln -s /usr/bin/python3.6 /usr/bin/python
     ln -s /usr/bin/pip3 /usr/bin/pip
     echo 'export PYTHONPATH=/vagrant/' >> /home/vagrant/.bashrc
@@ -77,6 +78,6 @@ Vagrant.configure("2") do |config|
     sudo snap install --classic heroku
 
     # Install deps
-    pip install -r requirements.txt
+    pip install -r /vagrant/requirements.txt
   SHELL
 end
