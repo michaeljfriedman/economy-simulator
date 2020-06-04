@@ -832,11 +832,27 @@ $(document).ready(() => {
       this.element
         .on("click", () => {
           // Generate URL and copy it to clipboard
+          // Ref: https://stackoverflow.com/questions/47879184/document-execcommandcopy-not-working-on-chrome
           let json = JSON.stringify(config.toJSON());
           let url = (window.location.origin + "?" + urlParams.config + "="
-            + encodeURIComponent(json));
-          navigator.clipboard.writeText(url);
+                     + encodeURIComponent(json));
+
+          let text = document.createElement("textarea");
+          text.textContent = url;
+          document.body.appendChild(text);
+
+          let range = document.createRange();
+          range.selectNode(text);
+
+          let selection = document.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+
+          document.execCommand("copy");
           this.element.tooltip("show");
+
+          selection.removeAllRanges();
+          document.body.removeChild(text);
         })
         .on("blur", () => {
           // Hide the tooltip when button loses focus
