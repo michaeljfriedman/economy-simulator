@@ -35,11 +35,11 @@ defaults = {
 # A person in the model
 class Person:
 
-  def __init__(self, money=0, income=0, employed=True, spending_rate=0, industry='economy'):
+  def __init__(self, money=0, income=0, employed=True, daily_spending=0, industry='economy'):
     self.money = money
     self.income = income # income *per month* (not annual)
     self.employed = employed
-    self.spending_rate = spending_rate
+    self.daily_spending = daily_spending # amount to spend each day this month
     self.industry = industry
 
   def __str__(self):
@@ -72,7 +72,8 @@ def reset_spending_rates(people, spending_inclination):
     hi += 2 * diff # remember diff is negative
   rands = np.random.rand(len(people)) # random numbers used to pick a spending rate for each person
   for i in range(len(people)):
-    people[i].spending_rate = lo + rands[i] * (hi - lo)
+    rate = lo + rands[i] * (hi - lo)
+    people[i].daily_spending = rate * people[i].money / days_per_month
   return people
 
 # Initializes the simulator. Returns the list of people and companies
@@ -80,7 +81,6 @@ def init(
   ncompanies=defaults['ncompanies'],
   income=defaults['income'],
   company_size=defaults['company_size'],
-  spending_inclination=defaults['periods'][0]['spending_inclination'],
   industry_names=defaults['periods'][0]['spending_distribution'][0]
   ):
 
@@ -92,11 +92,10 @@ def init(
     companies[i].employees = [Person(industry=companies[i].industry) for j in range(size[i])]
     people += companies[i].employees
 
-  # Assign each person income and spending rates
+  # Assign each person income
   incomes = np.random.choice(income[0], p=income[1], size=len(people))
   for i in range(len(people)):
     people[i].income = incomes[i] / months_per_year
-  people = reset_spending_rates(people, spending_inclination)
   return people, companies
 
 # Grant stimulus for people and companies. Returns the new list of people and
@@ -131,9 +130,8 @@ def spend(people, companies, spending_distribution, industries):
     for p, rand_ind, r in zip(people, rand_inds, rands):
       ind = industries[rand_ind]
       c = ind[int(r * len(ind))]
-      amount = p.spending_rate * p.money / days_per_month
-      p.money -= amount
-      c.money += amount
+      p.money -= p.daily_spending
+      c.money += p.daily_spending
   return people, companies
 
 # Given the list of people and companies and the probability of rehiring,
@@ -230,7 +228,6 @@ def run(config, on_day=lambda period, day, people, companies: None):
     ncompanies=config['ncompanies'],
     income=config['income'],
     company_size=config['company_size'],
-    spending_inclination=config['periods'][0]['spending_inclination'],
     industry_names=industry_names
   )
   person_stimulus = None
@@ -252,6 +249,7 @@ def run(config, on_day=lambda period, day, people, companies: None):
 
     # Grant stimulus/unemployment benefits for this period
     people, companies = grant_stimulus(people, companies, person_stimulus, company_stimulus)
+    people = reset_spending_rates(people, spending_inclination)
 
     # Run the period
     for j in range(config['periods'][i]['duration']):
