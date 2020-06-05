@@ -53,26 +53,6 @@ def test_init_income_distribution():
     return
   print('Passed')
 
-def test_init_spending_inclination(s):
-  print('Check that spending rates are allocated according to the spending inclination: %.2f' % (s))
-  people, _ = simulator.init(
-    ncompanies=1,
-    spending_inclination=s,
-    company_size=[[1000], [1]]
-  )
-
-  avg = sum([p.spending_rate for p in people]) / len(people)
-  tolerance = 0.01
-  lower_bound = s - tolerance
-  upper_bound = s + tolerance
-
-  if not (lower_bound <= avg <= upper_bound):
-    print('Failed: spending inclination is off')
-    print('Expected: average spending rate in range [%.4f, %.4f]' % (lower_bound, upper_bound))
-    print('Actual:   average spending rate = %.4f' % (avg))
-    return
-  print('Passed')
-
 def test_init_industries():
   print('Check that industries are assigned correctly')
   ind1 = 'industry 1'
@@ -94,6 +74,24 @@ def test_init_industries():
         print('Expected: c.industry=%s, p.industry=%s' % (c.industry, c.industry))
         print('Actual:   c.industry=%s, p.industry=%s' % (c.industry, p.industry))
         return
+  print('Passed')
+
+def test_spending_inclination(s):
+  print('Check that spending rates are allocated according to the spending inclination: %.2f' % (s))
+  money = 100
+  people = [simulator.Person(money=money) for i in range(1000)]
+  people = simulator.reset_spending_rates(people=people, spending_inclination=s)
+
+  avg = sum([p.daily_spending for p in people]) / len(people)
+  tolerance = 0.03
+  lower_bound = (s - tolerance) * money / simulator.days_per_month
+  upper_bound = (s + tolerance) * money / simulator.days_per_month
+
+  if not (lower_bound <= avg <= upper_bound):
+    print('Failed: spending inclination is off')
+    print('Expected: average daily spending in range [%.4f, %.4f]' % (lower_bound, upper_bound))
+    print('Actual:   average daily spending = %.2f' % (avg))
+    return
   print('Passed')
 
 def test_stimulus():
@@ -156,16 +154,20 @@ def test_people_spending1():
   p_money = 100
   c_money = 0
   ind = 'industry'
-  spending_rate = 0.5
-  p = simulator.Person(money=p_money, spending_rate=spending_rate)
+  daily_spending = 10
+  p = simulator.Person(money=p_money, daily_spending=daily_spending)
   c1 = simulator.Company(money=c_money, industry=ind)
   c2 = simulator.Company(money=c_money, industry=ind)
   companies = [c1, c2]
-  people, companies = simulator.spend([p], companies, [[ind], [1]], {ind: companies})
+  people, companies = simulator.spend(
+    people=[p],
+    companies=companies,
+    spending_distribution=[[ind], [1]],
+    industries={ind: companies}
+  )
 
-  spent = spending_rate * p_money / simulator.days_per_month
-  p_money_exp = p_money - spent
-  c_money_exp = c_money + spent
+  p_money_exp = p_money - daily_spending
+  c_money_exp = c_money + daily_spending
   if not (people[0].money == p_money_exp and (companies[0].money == c_money_exp
     or companies[1].money == c_money_exp)):
     print('Failed: money was not spent correctly')
@@ -182,9 +184,9 @@ def test_people_spending2():
   c_money = 0
   ind1 = 'industry 1'
   ind2 = 'industry 2'
-  spending_rate = 0.5
+  daily_spending = 10
   p = 0.75
-  people = [simulator.Person(money=p_money, spending_rate=spending_rate) for i in range(100)]
+  people = [simulator.Person(money=p_money, daily_spending=daily_spending) for i in range(100)]
   companies = [
     simulator.Company(money=c_money, industry=ind1),
     simulator.Company(money=c_money, industry=ind2)
@@ -197,8 +199,7 @@ def test_people_spending2():
   )
 
   # Check that people's money is correct
-  spent = spending_rate * p_money / simulator.days_per_month
-  p_money_exp = p_money - spent
+  p_money_exp = p_money - daily_spending
   for person in people:
     if person.money != p_money_exp:
       print('Failed: person spent wrong amount of money')
@@ -209,10 +210,10 @@ def test_people_spending2():
   # Check that companies' money matches the expected distribution
   tolerance = 0.1
   c_money_exp = [
-    {'lower_bound': c_money + (p - tolerance) * len(people) * spent,
-     'upper_bound': c_money + (p + tolerance) * len(people) * spent},
-    {'lower_bound': c_money + (1 - p - tolerance) * len(people) * spent,
-     'upper_bound': c_money + (1 - p + tolerance) * len(people) * spent}
+    {'lower_bound': c_money + (p - tolerance) * len(people) * daily_spending,
+     'upper_bound': c_money + (p + tolerance) * len(people) * daily_spending},
+    {'lower_bound': c_money + (1 - p - tolerance) * len(people) * daily_spending,
+     'upper_bound': c_money + (1 - p + tolerance) * len(people) * daily_spending}
   ]
   for i in range(len(companies)):
     lower_bound = c_money_exp[i]['lower_bound']
@@ -418,10 +419,10 @@ def test_rehire():
 def main():
   test_init_company_size()
   test_init_income_distribution()
-  test_init_spending_inclination(0.5)
-  test_init_spending_inclination(0.2)
-  test_init_spending_inclination(0.9)
   test_init_industries()
+  test_spending_inclination(0.5)
+  test_spending_inclination(0.2)
+  test_spending_inclination(0.9)
   test_stimulus()
   test_unemployment_benefit()
   test_people_spending1()
