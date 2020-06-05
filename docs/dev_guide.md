@@ -88,7 +88,6 @@ Base parameters:
 - `ncompanies` (int)
 - `income` (distribution)
 - `company_size` (distribution)
-- `nonpayroll` (float)
 
 Periods:
 
@@ -114,7 +113,6 @@ Example:
     [10, 20],
     [0.5, 0.5]
   ],
-  "nonpayroll": 0.75,
   "periods": [
     {
       "duration": 360,
