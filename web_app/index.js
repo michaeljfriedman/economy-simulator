@@ -21,7 +21,6 @@ $(document).ready(() => {
       [10],
       [1]
     ],
-    nonpayroll: 0.75,
     periods: [{
       duration: 360,
       person_stimulus: 1,
@@ -463,7 +462,6 @@ $(document).ready(() => {
       this.ncompanies = new Var("ncompanies", new NumberInput("Number of companies", "integer"));
       this.income = new Var("income", new DistributionInput("Income levels", "integer"));
       this.company_size = new Var("company_size", new DistributionInput("Company size", "integer"));
-      this.nonpayroll = new Var("nonpayroll", new PercentageInput("Company non-payroll expenses"));
       this.periods = [];
 
       let periodButtons = new AddRemoveButtons(
@@ -483,8 +481,7 @@ $(document).ready(() => {
       [
         this.ncompanies,
         this.income,
-        this.company_size,
-        this.nonpayroll
+        this.company_size
       ].forEach((x) => {
         baseParamsCards.add(x.input.element);
       });
@@ -521,7 +518,6 @@ $(document).ready(() => {
           this.company_size.input.values,
           this.company_size.input.probabilities
         ],
-        nonpayroll: this.nonpayroll.input.value,
         periods: []
       };
 
@@ -550,7 +546,6 @@ $(document).ready(() => {
       success &= this.ncompanies.set(json.ncompanies);
       success &= this.income.set(json.income);
       success &= this.company_size.set(json.company_size);
-      success &= this.nonpayroll.set(json.nonpayroll);
 
       // Add/remove periods if necessary to match the given set
       let diff = Math.abs(json.periods.length - this.periods.length);
