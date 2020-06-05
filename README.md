@@ -151,18 +151,19 @@ Use the `--help` flag for more details on command-line options.
 
 ### Outputs
 
-Running a simulation produces 4 main charts:
+Running a simulation produces 5 main charts:
 
 - Distribution of money across people
 - Distribution of money across companies
 - Unemployment rate
 - Business closure rate
+- Total money in circulation
 
 The distributions are represented with multiple lines showing various
 percentiles.
 
-These charts are shown at 3 different levels: over the entire economy, broken
-down by income level, and broken down by industry.
+The first 4 charts are shown at 3 different levels: over the entire economy,
+broken down by income level, and broken down by industry.
 
 That's it! Have fun playing around with the parameters!
 
