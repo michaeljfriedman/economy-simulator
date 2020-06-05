@@ -25,12 +25,12 @@ The basic model works like this. There are two kinds of entities: *people* and
 each month. They spend a portion of their money at different companies during
 the course of each month, saving anything they have leftover. Companies have
 to pay their expenses every month (in this model, the only expense is payroll).
-They lay off employees when they can't afford their expenses, hire new ones if
-they can afford to, and go out of business when they can no longer afford their
-expenses. Each company also belongs to an industry, and we can tweak the amount
-people spend in each industry. We run this system for a fixed period of time.
-People and companies may build wealth, scrape by, or collapse, according to this
-probabilistic model.
+They lay off some employees when they can't afford their expenses, going out of
+business when they can no longer afford to pay any employees at all. On the other
+hand, they hire new employees when they can afford to. Each company also belongs
+to an industry, and we can tweak the amount people spend in each industry. We run
+this system for a fixed period of time. People and companies may build wealth,
+scrape by, or collapse, according to this probabilistic model.
 
 We're primarily interested in two things:
 
@@ -71,10 +71,11 @@ Each day:
 At the end of each month:
 
 - Companies rehire unemployed people if they can afford them, and pay their
-  employees 1 month's income (similarly laying off employees if they can't
-  afford the expenses). People pick a new spending rate for the next month, and
-  receive stimulus grants and/or unemployment benefits if applicable. Companies
-  also receive stimulus if applicable.
+  employees 1 month's income. If they can't afford payroll, they pick random
+  employees to lay off until they can. They also receive a stimulus if
+  applicable.
+- People pick a new spending rate for the next month, and receive stimulus
+  grants and/or unemployment benefits if applicable.
 
 ## Running a simulation
 
@@ -120,8 +121,8 @@ value is used.
   person will spend each month. For example, setting this to 50% means that
   people will, on average, spend 50% of their money each month. The actual
   percentage that each person spends is different each month, drawn uniformly
-  from a range between 0 and 1, squashed on one end so that it centers at this
-  number.
+  from a subrange between 0 and 1, pushed toward one end so that it centers at
+  this number.
 - **Spending distribution across industries**: the distribution of which
   industries people will spend their money in. For example, if you had 5
   industries, 4 that each have 25% probability, and 1 with 0%, this would
