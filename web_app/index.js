@@ -731,6 +731,14 @@ $(document).ready(() => {
             [""]
           );
 
+          let circulation = new ChartType(
+            "circulation",
+            "Total money in circulation",
+            "Months",
+            "Dollars",
+            [""]
+          );
+
           let charts = {
             overall: {},
             income_levels: {},
@@ -738,7 +746,7 @@ $(document).ready(() => {
           };
 
           // Make overall charts
-          charts.overall = new ChartGroup("Overall", [person_money, company_money, person_unemployment, company_closures]);
+          charts.overall = new ChartGroup("Overall", [person_money, company_money, person_unemployment, company_closures, circulation]);
 
           // Make per-income level charts
           charts.income_levels = {}
@@ -787,7 +795,7 @@ $(document).ready(() => {
             let data = msg.data;
 
             // Overall charts
-            [person_money, company_money, person_unemployment, company_closures].forEach((t) => {
+            [person_money, company_money, person_unemployment, company_closures, circulation].forEach((t) => {
               charts.overall.charts[t.name].update(data.overall[t.name]);
             });
 

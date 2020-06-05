@@ -85,7 +85,10 @@ def run_simulator(ws):
     data = {
       'overall': merge([
         people_results(people, percentiles),
-        company_results(companies, percentiles)
+        company_results(companies, percentiles),
+        {'circulation': [
+          round(np.sum([p.money for p in people]) + np.sum([c.money for c in companies]), 2)
+        ]}
       ]),
       'income_levels': {
         str(int(simulator.months_per_year * i)): people_results([p for p in people if p.income == i], percentiles)
