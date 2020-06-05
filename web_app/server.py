@@ -67,13 +67,13 @@ def run_simulator(ws):
   # Helper functions
   def people_results(people, percentiles):
     return {
-      'person_money': list(np.percentile([p.money for p in people], percentiles)),
+      'person_money': list(np.round(np.percentile([p.money for p in people], percentiles), 2)),
       'person_unemployment': [np.mean([not p.employed for p in people])]
     }
 
   def company_results(companies, percentiles):
     return {
-      'company_money': list(np.percentile([c.money for c in companies], percentiles)),
+      'company_money': list(np.round(np.percentile([c.money for c in companies], percentiles), 2)),
       'company_closures': [np.mean([not c.in_business for c in companies])]
     }
 

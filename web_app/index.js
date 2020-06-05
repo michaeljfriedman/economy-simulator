@@ -22,7 +22,7 @@ $(document).ready(() => {
       [1]
     ],
     periods: [{
-      duration: 360,
+      duration: 12,
       person_stimulus: 1,
       company_stimulus: 1,
       unemployment_benefit: 0.8,
@@ -431,7 +431,7 @@ $(document).ready(() => {
   class Period {
     // index = index of this period (for display)
     constructor(index) {
-      this.duration = new Var("duration", new NumberInput("Number of days", "integer"));
+      this.duration = new Var("duration", new NumberInput("Duration (months)", "integer"));
       this.person_stimulus = new Var("person_stimulus", new NumberInput("Person stimulus or tax", "float"));
       this.company_stimulus = new Var("company_stimulus", new NumberInput("Company stimulus or tax", "float"));
       this.unemployment_benefit = new Var("unemployment_benefit", new NumberInput("Unemployment benefit", "float"))

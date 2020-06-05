@@ -106,7 +106,7 @@ following parameters. All parameters must be set in the first period, but after
 that, if a parameter is not set in a particular period, the previous
 value is used.
 
-- **Duration**: the duration of the period, in days
+- **Duration**: the duration of the period, in months
 - **Stimulus/tax for people**: the fraction of each person's monthly income that's
   granted to them as "stimulus" for this period. In the first period, this is
   the amount of money people will start the simulation with (e.g. 1 month's
