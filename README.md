@@ -72,10 +72,10 @@ At the end of each month:
 
 - Companies rehire unemployed people if they can afford them, and pay their
   employees 1 month's income. If they can't afford payroll, they pick random
-  employees to lay off until they can. They also receive a stimulus if
+  employees to lay off until they can. They also get a stimulus/tax if
   applicable.
-- People pick a new spending rate for the next month, and receive stimulus
-  grants and/or unemployment benefits if applicable.
+- People pick a new spending rate for the next month, and get a stimulus/tax
+  and/or unemployment benefits if applicable.
 
 ## Running a simulation
 
@@ -107,11 +107,12 @@ that, if a parameter is not set in a particular period, the previous
 value is used.
 
 - **Duration**: the duration of the period, in days
-- **Stimulus for people**: the fraction of each person's monthly income that's
+- **Stimulus/tax for people**: the fraction of each person's monthly income that's
   granted to them as "stimulus" for this period. In the first period, this is
   the amount of money people will start the simulation with (e.g. 1 month's
-  income), and in later periods, this can simulate stimulus checks.
-- **Stimulus for companies**: analogous number for companies, as a fraction of
+  income), and in later periods, this can simulate stimulus checks. You can also
+  set a negative value, which would take money away from people, simulating a tax.
+- **Stimulus/tax for companies**: analogous number for companies, as a fraction of
   their monthly expenses.
 - **Unemployment benefit**: a stimulus that's granted each month, only to
   *unemployed* people. Also specified as a fraction of monthly income.

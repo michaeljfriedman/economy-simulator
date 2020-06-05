@@ -432,8 +432,8 @@ $(document).ready(() => {
     // index = index of this period (for display)
     constructor(index) {
       this.duration = new Var("duration", new NumberInput("Number of days", "integer"));
-      this.person_stimulus = new Var("person_stimulus", new NumberInput("Person stimulus", "float"));
-      this.company_stimulus = new Var("company_stimulus", new NumberInput("Company stimulus", "float"));
+      this.person_stimulus = new Var("person_stimulus", new NumberInput("Person stimulus or tax", "float"));
+      this.company_stimulus = new Var("company_stimulus", new NumberInput("Company stimulus or tax", "float"));
       this.unemployment_benefit = new Var("unemployment_benefit", new NumberInput("Unemployment benefit", "float"))
       this.rehire_rate = new Var("rehire_rate", new NumberInput("Rehire rate", "float"));
       this.spending_inclination = new Var("spending_inclination", new PercentageInput("Inclination to spend"));
