@@ -159,19 +159,25 @@ def test_people_spending1():
   c1 = simulator.Company(money=c_money, industry=ind)
   c2 = simulator.Company(money=c_money, industry=ind)
   companies = [c1, c2]
-  people, companies = simulator.spend(
-    people=[p],
-    companies=companies,
-    spending_distribution=[[ind], [1]],
-    industries={ind: companies}
-  )
+  people = [p]
+  ndays = 2
+  for i in range(ndays):
+    people, companies = simulator.spend(
+      people=[p],
+      companies=companies,
+      spending_distribution=[[ind], [1]],
+      industries={ind: companies}
+    )
 
-  p_money_exp = p_money - daily_spending
-  c_money_exp = c_money + daily_spending
-  if not (people[0].money == p_money_exp and (companies[0].money == c_money_exp
-    or companies[1].money == c_money_exp)):
+  p_money_exp = p_money - daily_spending * ndays
+  outcomes = [
+    (c_money + ndays * daily_spending, c_money),
+    (c_money, c_money + ndays * daily_spending),
+    (c_money + daily_spending, c_money + daily_spending)
+  ]
+  if not (people[0].money == p_money_exp and (companies[0].money, companies[1].money) in outcomes):
     print('Failed: money was not spent correctly')
-    print('Expected: p.money = %.2f, c1.money or c2.money = %.2f' % (p_money_exp, c_money_exp))
+    print('Expected: p.money = %.2f, (c1.money, c2.money) in %s' % (p_money_exp, outcomes))
     print('Actual:   p.money = %.2f, c1.money = %.2f, c2.money = %.2f' % (
       people[0].money, companies[0].money, companies[1].money
     ))
