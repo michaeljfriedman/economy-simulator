@@ -435,7 +435,7 @@ $(document).ready(() => {
       this.person_stimulus = new Var("person_stimulus", new NumberInput("Person stimulus or tax", "float"));
       this.company_stimulus = new Var("company_stimulus", new NumberInput("Company stimulus or tax", "float"));
       this.unemployment_benefit = new Var("unemployment_benefit", new NumberInput("Unemployment benefit", "float"))
-      this.rehire_rate = new Var("rehire_rate", new NumberInput("Rehire rate", "float"));
+      this.rehire_rate = new Var("rehire_rate", new PercentageInput("Rehire rate"));
       this.spending_inclination = new Var("spending_inclination", new PercentageInput("Inclination to spend"));
       this.spending_distribution = new Var("spending_distribution", new DistributionInput("Spending distribution across industries", "string"));
 
