@@ -22,11 +22,11 @@ $(document).ready(() => {
       [1]
     ],
     periods: [{
-      duration: 12,
+      duration: 36,
       person_stimulus: 1,
       company_stimulus: 1,
-      unemployment_benefit: 0.8,
-      rehire_rate: 0.8,
+      unemployment_benefit: 0,
+      rehire_rate: 1,
       spending_inclination: 0.5,
       spending_distribution: [
         ["industry 1"],

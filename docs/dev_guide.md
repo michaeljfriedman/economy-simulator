@@ -115,9 +115,9 @@ Example:
   ],
   "periods": [
     {
-      "duration": 12,
-      "person_stimulus": 1.0,
-      "company_stimulus": 1.0,
+      "duration": 36,
+      "person_stimulus": 1,
+      "company_stimulus": 1,
       "unemployment_benefit": 0.8,
       "rehire_rate": 0.8,
       "spending_inclination": 0.5,

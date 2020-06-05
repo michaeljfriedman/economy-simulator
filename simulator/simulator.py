@@ -7,9 +7,9 @@ import numpy as np
 months_per_year = 12
 days_per_month = 30
 defaults = {
-  'ncompanies': 10,
+  'ncompanies': 100,
   'income': [
-    [65000],
+    [50000],
     [1]
   ],
   'company_size': [
@@ -18,14 +18,14 @@ defaults = {
   ],
   'periods': [
     {
-      'duration': 12,
+      'duration': 36,
       'person_stimulus': 1,
       'company_stimulus': 1,
       'unemployment_benefit': 0,
       'rehire_rate': 1,
       'spending_inclination': 0.5,
       'spending_distribution': [
-        ['whole_economy'],
+        ['industry 1'],
         [1]
       ],
     }
