@@ -18,7 +18,7 @@ defaults = {
   ],
   'periods': [
     {
-      'duration': 360,
+      'duration': 12,
       'person_stimulus': 1,
       'company_stimulus': 1,
       'unemployment_benefit': 0,
@@ -255,23 +255,24 @@ def run(config, on_day=lambda period, day, people, companies: None):
 
     # Run the period
     for j in range(config['periods'][i]['duration']):
-      on_day(i, j, people, companies)
+      for d in range(days_per_month):
+        on_day(i, d, people, companies)
 
-      industries = {
-        ind: [c for c in companies if c.in_business and c.industry == ind]
-        for ind in spending_distribution[0]
-      }
-      people, companies = spend(people, companies, spending_distribution, industries)
+        industries = {
+          ind: [c for c in companies if c.in_business and c.industry == ind]
+          for ind in spending_distribution[0]
+        }
+        people, companies = spend(people, companies, spending_distribution, industries)
 
-      # At the end of the month, companies hire new employees and pay their
-      # employees
-      if j % days_per_month == days_per_month - 1:
-        people, companies = rehire_people(people, companies, rehire_rate)
-        people, companies = layoff_employees(people, companies)
-        people, companies = pay_employees(people, companies)
+        # At the end of the month, companies hire new employees and pay their
+        # employees
+        if d % days_per_month == days_per_month - 1:
+          people, companies = rehire_people(people, companies, rehire_rate)
+          people, companies = layoff_employees(people, companies)
+          people, companies = pay_employees(people, companies)
 
-        # Grant unemployment benefits
-        people = grant_unemployment(people, unemployment_benefit)
+          # Grant unemployment benefits
+          people = grant_unemployment(people, unemployment_benefit)
 
-        # Reset people's spending rates
-        people = reset_spending_rates(people, spending_inclination)
+          # Reset people's spending rates
+          people = reset_spending_rates(people, spending_inclination)
