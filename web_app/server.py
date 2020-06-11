@@ -66,9 +66,11 @@ def run_simulator(ws):
 
   # Helper functions
   def people_results(people, percentiles):
+    person_money = [0] * len(percentiles) if len(people) == 0 else list(np.round(np.percentile([p.money for p in people], percentiles), 2))
+    person_unemployment = [1] if len(people) == 0 else [np.mean([not p.employed for p in people])]
     return {
-      'person_money': list(np.round(np.percentile([p.money for p in people], percentiles), 2)),
-      'person_unemployment': [np.mean([not p.employed for p in people])]
+      'person_money': person_money,
+      'person_unemployment': person_unemployment
     }
 
   def company_results(companies, percentiles):
