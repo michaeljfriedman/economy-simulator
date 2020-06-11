@@ -138,17 +138,11 @@ the simulation with:
 
 ```bash
 cd cli
-python main.py --config=config.json --output=output/
+python app.py --config=config.json
 ```
 
-This will produce a bunch of metrics in the output/ directory. You can plot
-them with:
-
-```bash
-python plot.py --directory=output/
-```
-
-Use the `--help` flag for more details on command-line options.
+This will produce a bunch of charts in a directory called output/, showing the
+results. Use the `--help` flag for more details on command-line options.
 
 ### Outputs
 
