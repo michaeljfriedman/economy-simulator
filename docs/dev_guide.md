@@ -38,8 +38,7 @@ in the docs/ subdirectory.
 
 ```
 - cli/
-  - main.py       executable app
-  - plot.py       plots the results of the simulation
+  - app.py        executable app
 - simulator/
   - simulator.py  the actual simulator
   - test.py       tests for the simulator
@@ -47,6 +46,8 @@ in the docs/ subdirectory.
   - index.html    HTML for the main page
   - index.js      Scripts for the main page
   - server.py     The web server
+- util/
+  - util.py       Some helper functions
 ```
 
 ## Simulator
@@ -63,15 +64,9 @@ be used to track progress and/or record data for reporting later.
 
 ## CLI
 
-The CLI has two parts: an executable app (main.py) and a plotting program
-(plot.py). Running the main produces a directory with output data from the
-simulation (the data files produced are described in the header comment of
-main.py). The plotter processes the data to produce plots of each of the metrics
-described in the [README](../README.md#outputs).
-
-> Note that the data files produced by main.py actually contain all of the raw
-results from the simulator, not just the ones plotted. So you could perform
-additional analysis on the raw results if you want.
+The CLI is an executable app (app.py). It reads a JSON config (described in the
+next section) and produces a directory with the [output charts](../README.md#outputs)
+from the simulation.
 
 ### Config
 
