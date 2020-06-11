@@ -129,6 +129,8 @@ def spend(people, companies, spending_distribution, industries):
     rands = np.random.rand(len(people)) # random numbers used to pick a company for each person
     for p, rand_ind, r in zip(people, rand_inds, rands):
       ind = industries[rand_ind]
+      if len(ind) == 0:
+        continue
       c = ind[int(r * len(ind))]
       p.money -= p.daily_spending
       c.money += p.daily_spending
