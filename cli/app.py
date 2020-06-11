@@ -1,16 +1,6 @@
 '''
 This is the executable of the project. You can run this to run the simulator
-from the command line. Outputs the results to the specified directory:
-- person_income.csv: A row of each person's income
-- person_money.csv: 1 row for each day, recording each person's money that day
-- person_industries.csv: 1 row for each day, recording each person's industry
-  that day
-- person_unemployment.csv: 1 row for each day, recording 0/1 whether each person
-  is unemployed.
-- company_industries.csv: A row of each company's industry
-- company_money.csv: 1 row for each day, recording each company's money that day
-- company_closures.csv: 1 row for each day, recording 0/1 whether each company
-  is closed down
+from the command line. Outputs the results to the specified directory.
 
 Example:
 python main.py --config=config.json --output=output
