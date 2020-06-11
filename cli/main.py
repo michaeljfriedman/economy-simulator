@@ -17,13 +17,31 @@ python main.py --config=config.json --output=output
 '''
 
 from simulator import simulator
+from util import util
 from tqdm import tqdm
 import argparse
-import csv
 import json
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
+
+# Plots one set of results to an output file.
+# - x = list values to plot on x axis
+# - y = parallel list of {result name: value to plot on y axis}. Each
+#   result is plotted on a subplot, with the result name as the title
+# - output_file = string path to file
+def plot(x, y, output_file):
+  f = plt.figure(figsize=(20, 15))
+  result_names = y[0].keys()
+  nresults = len(result_names)
+  for i, result_name in zip(range(1, nresults+1), result_names):
+    ax = f.add_subplot(nresults, 1, i)
+    y_values = [y[i][result_name] for i in range(len(y))]
+    ax.plot(x, y_values)
+    ax.set_title(result_name)
+    ax.grid()
+  plt.savefig(output_file)
 
 def main(argv):
   # Parse config
@@ -37,55 +55,35 @@ def main(argv):
     config = json.loads(f.read())
 
   # Run simulator
-  total_ndays = sum([config['periods'][i]['duration'] for i in range(len(config['periods']))])
-  person_income = [[]]
-  person_money = [[] for i in range(total_ndays)]
-  person_industries = [[] for i in range(total_ndays)]
-  person_unemployment = [[] for i in range(total_ndays)]
-  company_industries = [[]]
-  company_money = [[] for i in range(total_ndays)]
-  company_closures = [[] for i in range(total_ndays)]
+  total_ndays = simulator.days_per_month * sum([config['periods'][i]['duration'] for i in range(len(config['periods']))])
   t = tqdm(total=total_ndays)
+  results = []
   def on_day(period, day, people, companies):
-    i = simulator.days_per_month * period + day
-    for p in people:
-      if period == 0 and day == 0:
-        person_income[0].append(p.income)
-      person_money[i].append(p.money)
-      person_industries[i].append(p.industry)
-      person_unemployment[i].append(not p.employed)
-    for c in companies:
-      if period == 0 and day == 0:
-        company_industries[0].append(c.industry)
-      company_money[i].append(c.money)
-      company_closures[i].append(not c.in_business)
     t.update()
+    if day % simulator.days_per_month != 0:
+      return
+    results.append(util.results(people, companies))
 
   simulator.run(config, on_day=on_day)
   t.close()
 
-  # Write results
+  # Plot results
   if not os.path.isdir(args.output_dir):
-      os.mkdir(args.output_dir)
-  files = [
-    ('person_income', person_income),
-    ('person_money', person_money),
-    ('person_industries', person_industries),
-    ('person_unemployment', person_unemployment),
-    ('company_industries', company_industries),
-    ('company_money', company_money),
-    ('company_closures', company_closures)
-  ]
-  for filename, data in files:
-    path = os.path.join(args.output_dir, '%s.csv' % filename)
-    with open(path, 'w') as f:
-      w = csv.writer(f)
-      arr = np.array(data)
-      if filename in ['person_income', 'person_money', 'company_money']:
-        arr = np.around(arr, 2) # round to 2 decimal places
-      elif filename in ['person_unemployment', 'company_closures']:
-        arr = arr.astype(int) # convert to 0/1
-      w.writerows(arr)
+    os.mkdir(args.output_dir)
+  x = range(len(results))
+  plot(x, [results[i]['overall'] for i in range(len(results))], os.path.join(args.output_dir, 'overall.png'))
+  for income in results[0]['income_levels'].keys():
+    plot(
+      x=x,
+      y=[results[i]['income_levels'][income] for i in range(len(results))],
+      output_file=os.path.join(args.output_dir, 'income-%s.png' % income)
+    )
+  for industry in results[0]['industries'].keys():
+    plot(
+      x=x,
+      y=[results[i]['industries'][industry] for i in range(len(results))],
+      output_file=os.path.join(args.output_dir, 'industry-%s.png' % industry)
+    )
 
 if __name__ == '__main__':
   main(sys.argv[1:])
